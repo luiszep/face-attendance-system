@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Register Page</title>
+</head>
+
+<body> 
+
+    <div class="login_form">
+        <h1>Register Page</h1> 
+       <form method="POST" action="/Attendance_system/register">
+            <div class="form-group">
+                <label for="username">Username: </label>
+                <input type="text" name="username" id="username"><br><br>
+            </div>
+            <div class="form-group">
+                <label for="reg_id">Registeration ID: </label>
+                <input type="text" name="reg_id" , id="reg_id"><br><br>
+            </div>
+            <div class="form-group">
+                <label for="password">Password: </label>
+                <input type="password" name="password" id="password" required title="Password must contain at least one uppercase letter, one symbol, one number, and be at least 8 characters long!"><br><br>
+            </div>
+            <div class="form-group">
+                <label for="role">Role: </label>
+                <select name="role" id="role">
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit">Submit</button><br><br>
+        </form>
+        <a href="{{'login'}}">Already have a account! Login here</a>
+    </div>
+    
+        function reloadPage() {
+            location.reload();
+        }
+    </script>
+    {% if error %}
+    <script>
+        // Display an alert with the error message
+        alert("{{ error|safe }}");
+    </script>
+{% endif %}
+</body>
+
+</html>
