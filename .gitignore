@@ -9,3 +9,28 @@ multiple.py
 signup.html
 double.html
 migrations
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+
+# Virtual environment folders
+venv/
+.venv/
+
+# Editor settings
+.vscode/
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+*.env
