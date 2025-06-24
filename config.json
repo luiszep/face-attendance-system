@@ -1,6 +1,6 @@
 {
     "params": {
-        "sql_url": "mysql://root:@localhost/college",
+        "sql_url": "mysql+pymysql://flaskuser:flaskpass123@localhost/face_attendance",
         "camera_index_1": 0,
         "camera_index_2": 1,
         "morning_time": "9",
