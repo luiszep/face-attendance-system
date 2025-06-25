@@ -55,19 +55,6 @@ login_manager.init_app(app)
 
 # Variables defined
 camera = None  # Global variable to store camera object
-morn_time = datetime_time(int(params['morning_time']))
-even_time = datetime_time(int(params['evening_time']))
-curr_time = datetime.datetime.now().time()
-
-
-# Logic to find what function to call based on the time of day for marking the attendance
-if morn_time <= curr_time < even_time:
-    morn_attendance = True
-    even_attendance = False
-else:
-    even_attendance = True
-    morn_attendance = False
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -97,6 +84,10 @@ class Attendance(db.Model):
     division = db.Column(db.String(10))
     branch = db.Column(db.String(100))
     reg_id = db.Column(db.String(100))
+
+    __table_args__ = (
+    db.UniqueConstraint('name', 'date', name='uix_name_date'),
+    )
 
 
 # Model of users table
@@ -151,64 +142,6 @@ def get_data(matches, matchIndex, studentIds):
         return student_id
     return None  # Return None if no match found
 
-
-# Function which writes the morning attendance in the database
-def morningattendance(name, current_date, roll_no, div, branch, reg_id):
-    time.sleep(3)
-    try:
-        with app.app_context():
-            existing_entry = Attendance.query.filter(
-                Attendance.name == name,
-                Attendance.date == current_date,
-                Attendance.start_time != None
-            ).first()
-
-            if existing_entry:
-                print("Your Attendance is already recorded before")
-            else:
-                new_attendance = Attendance(
-                    name=name,
-                    start_time=datetime.datetime.now().strftime("%H:%M:%S"),
-                    date=current_date,
-                    roll_no=roll_no,
-                    division=div,
-                    branch=branch,
-                    reg_id=reg_id
-                )
-                db.session.add(new_attendance)
-                db.session.commit()
-                print("Start time and student data recorded in the database")
-    except Exception as e:
-        print("Error:", e)
-
-
-# Function which writes the evening attendance in the database
-def eveningattendance(name, current_date):
-    time.sleep(3)
-    try:
-        with app.app_context():
-            existing_entry = Attendance.query.filter(
-                Attendance.name == name,
-                Attendance.date == current_date,
-                Attendance.start_time != None
-            ).first()
-            recorded_entry = Attendance.query.filter(
-                Attendance.name == name,
-                Attendance.end_time != None
-            ).first()
-
-            if existing_entry and not recorded_entry:
-                existing_entry.end_time = datetime.datetime.now().strftime("%H:%M:%S")
-                db.session.commit()
-                print("End time recorded in the database")
-            elif recorded_entry:
-                print("End time already recorded!")
-            else:
-                print("No existing entry found for evening attendance")
-    except Exception as e:
-        print("Error:", e)
-
-
 # Function which gets data of identified student from the database
 def mysqlconnect(student_id):
     # If student_id is None, return None for all values
@@ -237,11 +170,45 @@ def mysqlconnect(student_id):
     except Exception as e:
         print("Error:", e)
         return None, None, None, None, None
+    
+
+def record_attendance(name, current_date, roll_no, div, branch, reg_id):
+    try:
+        with app.app_context():
+            existing_entry = Attendance.query.filter(
+                Attendance.name == name,
+                Attendance.date == current_date
+            ).first()
+
+            current_time_str = datetime.datetime.now().strftime("%H:%M:%S")
+
+            if existing_entry:
+                existing_entry.end_time = current_time_str
+                db.session.commit()
+                print("End time updated")
+            else:
+                new_attendance = Attendance(
+                    name=name,
+                    start_time=current_time_str,
+                    end_time=current_time_str,
+                    date=current_date,
+                    roll_no=roll_no,
+                    division=div,
+                    branch=branch,
+                    reg_id=reg_id
+                )
+                db.session.add(new_attendance)
+                db.session.commit()
+                print("Start and end time recorded (first entry)")
+    except Exception as e:
+        print("Error:", e)
 
 
 # Function which does the face recognition and displaying the video feed
-def gen_frames(camera):
-    while camera is not None:
+def gen_frames(camera, duration=5):
+    start_time = time.time()
+
+    while camera is not None and (time.time() - start_time < duration):
         success, frame = camera.read()
         if not success:
             break
@@ -269,15 +236,9 @@ def gen_frames(camera):
             cv2.putText(imgBackground, reg_id,
                         (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
             current_date = datetime.datetime.now().date()
-            if student_id and morn_attendance:
-                t = threading.Thread(target=morningattendance, args=(
-                    name, current_date, roll_no, div, branch, reg_id))
+            if student_id:
+                t = threading.Thread(target=record_attendance, args=(name, current_date, roll_no, div, branch, reg_id))
                 t.start()
-            if student_id and even_attendance:
-                t = threading.Thread(
-                    target=eveningattendance, args=(name, current_date))
-                t.start()
-
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
@@ -305,30 +266,58 @@ def video2():
     except Exception as e:
         print("Error:", e)
         return "Error connecting to the video stream"
+    
+
+@app.route('/scan/<int:camera_id>')
+def start_scan(camera_id):
+    try:
+        if camera_id == 1:
+            cam_index = params['camera_index_1']
+        elif camera_id == 2:
+            cam_index = params['camera_index_2']
+        else:
+            return "Invalid camera ID"
+
+        camera = cv2.VideoCapture(cam_index)
+        return Response(gen_frames(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+    except Exception as e:
+        print("Error in scan route:", e)
+        return "Error starting scan"
 
 
 # Route which displays the attendance of all student for that current day
 @app.route('/display_attendance', methods=['GET', 'POST'])
 @login_required
 def display_attendance():
-    if current_user.role == 'student':
-        stop_camera()
-        current_date = datetime.datetime.now().date()
-        try:
-            input_date = None
-            if request.method == 'POST':
-                input_date = request.form['date']
-            if input_date is None:
-                date = current_date
+    stop_camera()
+    current_date = datetime.datetime.now().date()
+    try:
+        input_date = None
+        if request.method == 'POST':
+            input_date = request.form['date']
+        if input_date is None:
+            date = current_date
+        else:
+            date = input_date
+
+        # STUDENT: see only their own attendance
+        if current_user.role == 'student':
+            name = session['username']
+            username = session.get('username')
+            user = Users.query.filter_by(username=username).first()
+            if user:
+                data = Attendance.query.filter_by(date=date, reg_id=user.reg_id).all()
             else:
-                date = input_date
-            data = Attendance.query.filter_by(date=date).all()
-            return render_template('display_data.html', data=data, date=date)
-        except Exception as e:
-            # Return a more informative error message or handle specific exceptions
-            return str(e)
-    else:
-        return 'UnAuthorized access'
+                data = []
+        else:
+            # Fallback (shouldn’t trigger)
+            data = []
+
+        return render_template('display_data.html', data=data, date=date)
+    except Exception as e:
+        return str(e)
+
 
 # Route to add new students page for admins
 
@@ -398,29 +387,32 @@ def add_user():
             return redirect(request.url)
 
 
-@app.route('/get_attendance', methods=['GET'])
+@app.route('/get_attendance', methods=['GET', 'POST'])
 @login_required
 def get_attendance():
     if current_user.role == 'teacher':
         stop_camera()
-        query_parameters = {}
-        for key, value in request.args.items():
-            if value:
-                query_parameters[key] = value
 
-        if query_parameters:
-            attendance_records = Attendance.query.filter_by(
-                **query_parameters).order_by(asc(Attendance.reg_id)).all()
+        try:
+            date_filter = request.form.get('date') if request.method == 'POST' else None
+            query_parameters = {key: value for key, value in request.args.items() if value}
 
-            if not attendance_records:
-                flash("No records available for the specified criteria")
-        else:
-            flash("No parameters provided for query")
-            attendance_records = []  # Assign an empty list to avoid undefined variable error
+            if date_filter:
+                # Get all attendance records on selected date
+                attendance_records = Attendance.query.filter_by(date=date_filter).order_by(asc(Attendance.reg_id)).all()
+            elif query_parameters:
+                # Use filters if provided
+                attendance_records = Attendance.query.filter_by(**query_parameters).order_by(asc(Attendance.reg_id)).all()
+            else:
+                attendance_records = []
+                flash("No parameters provided for query", "warning")
 
-        return render_template('results.html', attendance_records=attendance_records)
+            return render_template('results.html', attendance_records=attendance_records, date=date_filter)
+
+        except Exception as e:
+            return str(e)
     else:
-        return 'UnAuthorized access'
+        return 'Unauthorized access'
 
 # Function to download the attendance of particular date in cvs format
 
@@ -636,8 +628,11 @@ def get_image(filename):
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if current_user.role == 'student':
-        name = session['username']
-        data = Attendance.query.filter_by(name=name).all()
+        reg_id = session['username']  # default fallback
+        if hasattr(current_user, 'reg_id'):
+            reg_id = current_user.reg_id
+
+        data = Attendance.query.filter_by(reg_id=reg_id).all()
         no_of_attendance = len(data)
         return render_template('profile.html', data=data, no_of_attendance=no_of_attendance)
 

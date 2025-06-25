@@ -2,45 +2,146 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Attendance</title>
-    <style>
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in {
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .backdrop-blur {
+      backdrop-filter: blur(8px);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .countdown-circle {
+      animation: pop 0.5s ease;
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
 </head>
 
-<body>
-    <h1>Video Streams</h1>
-    <div style="display: flex;">
-        <!-- Video stream 1 -->
-        <div>
-            <h2>Video Stream 1</h2>
-            <div class="container">
-                <img src="{{ url_for('video1') }}" width="75%" id="webcam">
-            </div>
-        </div>
-        <!-- Video stream 2 -->
-        <div>
-            <h2>Video Stream 2</h2>
-            <div class="container">
-                <img src="{{ url_for('video2') }}" width="75%" id="webcam">
-            </div>
-        </div>
-    </div>
-        <a href="/" onclick="reloadPage()">Go to Index</a>
+<body class="min-h-screen m-0 p-0 bg-gradient-to-br from-blue-900 via-gray-900 to-indigo-900 overflow-hidden flex items-center justify-center">
 
-    <script>
-        function reloadPage() {
-            location.reload();
+  <!-- Beep sound (local file placed in Flask static folder as 'beep.wav') -->
+  <audio id="beep" src="{{ url_for('static', filename='beep.wav') }}" preload="auto"></audio>
+
+  <div class="w-full h-full flex items-center justify-center p-4">
+    <div class="relative w-full max-w-screen-md aspect-video flex items-center justify-center rounded-xl overflow-hidden shadow-2xl bg-black">
+
+      <!-- Placeholder (overlay before scan) -->
+      <div id="camera-placeholder"
+        class="absolute inset-0 flex flex-col items-center justify-center fade-in text-white z-10">
+
+        <!-- Static icon before scan -->
+        <div id="scanCircle" class="text-6xl mb-6 opacity-20">📷</div>
+
+        <!-- Animated countdown -->
+        <div id="countdown"
+          class="hidden text-6xl font-bold mb-6 text-white transition-all duration-300 ease-in-out"></div>
+
+        <!-- Button -->
+        <button
+          onclick="startCountdown(1)"
+          class="bg-blue-600 hover:bg-blue-700 text-white lowercase px-6 py-2 rounded-md text-sm font-medium tracking-wide transition-all duration-200 shadow-sm"
+        >
+          identify me
+        </button>
+
+      </div>
+      <!-- Camera feed image (hidden by default) -->
+      <img id="camera1" src="" alt="Camera Feed" class="w-full h-full object-contain hidden rounded-lg" />
+    </div>
+  </div>
+
+  <script>
+    function startCountdown(streamId) {
+      const circle = document.getElementById("scanCircle");
+      const countdownEl = document.getElementById("countdown");
+      const beep = document.getElementById("beep");
+      let counter = 3;
+
+      // ✅ Hide the button immediately
+      const button = document.querySelector("button");
+      if (button) button.classList.add("hidden");
+
+      circle.classList.add("hidden");
+      countdownEl.classList.remove("hidden");
+      countdownEl.innerText = counter;
+
+      const interval = setInterval(() => {
+        try {
+          beep.volume = 1.0;
+          beep.currentTime = 0;
+          beep.play().catch(err => console.warn("Beep error:", err));
+        } catch (e) { }
+
+        counter--;
+        if (counter > 0) {
+          countdownEl.innerText = counter;
+          countdownEl.classList.add("countdown-circle");
+          setTimeout(() => countdownEl.classList.remove("countdown-circle"), 500);
+        } else {
+          clearInterval(interval);
+          countdownEl.classList.add("hidden");
+          beginScan(streamId);
         }
-    </script>
-    </div>
+      }, 1000);
+    }
 
+    function beginScan(streamId) {
+      const overlay = document.getElementById("camera-placeholder");
+      const cameraImg = document.getElementById(`camera${streamId}`);
+
+      // Show camera
+      cameraImg.classList.remove("hidden");
+      overlay.classList.add("hidden");
+
+      // Load scan URL with timestamp to prevent caching
+      cameraImg.src = `/Attendance_system/scan/${streamId}?t=${new Date().getTime()}`;
+
+      // Show scan result after 10 seconds
+      setTimeout(() => {
+        // Clean up camera feed
+        cameraImg.classList.add("hidden");
+        cameraImg.src = "";
+
+        // Optional: show scan icon again
+        const circle = document.getElementById("scanCircle");
+        circle.classList.remove("hidden");
+
+        // ✅ Reload the page after 1s (avoids flicker)
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
+      }, 10000);
+    }
+  </script>
 </body>
 
 </html>

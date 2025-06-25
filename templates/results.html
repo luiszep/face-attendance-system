@@ -22,6 +22,7 @@
     </script>
     <div class="query">
         <h1>Attendance Query</h1>
+        <p>Enter any filter below (Name, Reg ID, etc.) — or leave them blank and select only a date to see all students on that day.</p>
         <form action="/Attendance_system/get_attendance" method="GET" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="name">Name:</label>
@@ -53,6 +54,7 @@
         <div class="heading">
             <h1>Results</h1>
             <h1>Attendance Results</h1>
+            <p><strong>Total records: {{ attendance_records|length }}</strong></p>
         </div>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -80,16 +82,14 @@
             <tbody>
                 {% for record in attendance_records %}
                 <tr>
-                    <td><b>{{ record.name }}</b></td>
-                    <b>
-                        <td>{{ record.start_time }}
-                    </b></td>
-                    <td><b>{{ record.end_time }}</b></td>
-                    <td><b>{{ record.date }}</b></td>
-                    <td><b>{{ record.roll_no }}</b></td>
-                    <td><b>{{ record.division }}</b></td>
-                    <td><b>{{ record.branch }}</b></td>
-                    <td><b>{{ record.reg_id }}</b></td>
+                    <td>{{ record.name }}</td>
+                    <td>{{ record.start_time }}</td>
+                    <td>{{ record.end_time }}</td>
+                    <td>{{ record.date }}</td>
+                    <td>{{ record.roll_no }}</td>
+                    <td>{{ record.division }}</td>
+                    <td>{{ record.branch }}</td>
+                    <td>{{ record.reg_id }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

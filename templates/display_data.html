@@ -40,29 +40,17 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
+                        <th>Date</th>
                         <th>Start Time</th>
                         <th>End Time</th>
-                        <th>Date</th>
-                        <th>Roll No</th>
-                        <th>Division</th>
-                        <th>Branch</th>
-                        <th>Registration No</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for record in data %}
                     <tr>
-                        <td>{{ record.id }}</td>
-                        <td>{{ record.name }}</td>
+                        <td>{{ record.date }}</td>
                         <td>{{ record.start_time }}</td>
                         <td>{{ record.end_time }}</td>
-                        <td>{{ record.date }}</td>
-                        <td>{{ record.roll_no }}</td>
-                        <td>{{ record.division }}</td>
-                        <td>{{ record.branch }}</td>
-                        <td>{{ record.reg_id }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
