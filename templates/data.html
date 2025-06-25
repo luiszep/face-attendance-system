@@ -9,7 +9,7 @@
 </head>
 
 <body>
-    <form action="{{ url_for('logout') }}" method="post"  class="logoutForm">
+    <form action="{{ url_for('auth_bp.logout') }}" method="post" class="logoutForm">
         <button type="submit">Logout</button>
     </form>
     {% with messages = get_flashed_messages() %}

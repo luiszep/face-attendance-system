@@ -56,7 +56,7 @@
                 </tbody>
             </table>
             <div class="button-group">
-                <form action="{{ url_for('logout') }}" method="post" id="logoutForm">
+                <form action="{{ url_for('auth_bp.logout') }}" method="post" id="logoutForm">
                     <button type="submit">Logout</button>
                 </form>
                 <form action="{{ url_for('profile') }}"class="profile-btn" method="post">

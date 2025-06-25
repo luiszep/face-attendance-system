@@ -23,6 +23,17 @@ import io
 import logging
 import json
 import re
+from utils.helpers import (
+    findEncodings,
+    compare,
+    get_data,
+    mysqlconnect,
+    record_attendance,
+    bcrypt,
+    stop_camera,
+)
+from models import db, Student_data, Attendance, Users
+
 
 
 # Opening all the necessary files needed
@@ -34,12 +45,11 @@ encodeListKnownWithIds = pickle.load(file)
 file.close()
 encodeListKnown, studentIds = encodeListKnownWithIds
 
-
 # App configs
 app = Flask(__name__)
 app.config['SECRET_KEY'] = params['secret_key']
 app.config['SQLALCHEMY_DATABASE_URI'] = params['sql_url']
-db = SQLAlchemy(app)
+db.init_app(app)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = params['upload_folder']
 hostedapp = Flask(__name__)
@@ -47,10 +57,13 @@ hostedapp.wsgi_app = DispatcherMiddleware(
     NotFound(), {"/Attendance_system": app})
 cert_path = params['cert_path']
 key_path = params['key_path']
-bcrypt = Bcrypt()
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# Register route modules
+from routes.auth_routes import auth_bp
+app.register_blueprint(auth_bp)
 
 
 # Variables defined
@@ -60,149 +73,14 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Models used to connect in SQL Alchemy
-# Model of students data table
-class Student_data(db.Model):
-    __tablename__ = 'student_data'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True, nullable=False)
-    rollno = db.Column(db.String(120), unique=True, nullable=False)
-    division = db.Column(db.String(80), nullable=False)
-    branch = db.Column(db.String(80), nullable=False)
-    regid = db.Column(db.String(80), unique=True, nullable=False)
-
-
-# Model of Attendance table
-class Attendance(db.Model):
-    __tablename__ = 'attendance'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    start_time = db.Column(db.String(20))
-    end_time = db.Column(db.String(20))
-    date = db.Column(db.Date, default=datetime.date.today)
-    roll_no = db.Column(db.String(20), nullable=False, unique=False)
-    division = db.Column(db.String(10))
-    branch = db.Column(db.String(100))
-    reg_id = db.Column(db.String(100))
-
-    __table_args__ = (
-    db.UniqueConstraint('name', 'date', name='uix_name_date'),
-    )
-
-
-# Model of users table
-class Users(db.Model, UserMixin):
-    __tablename__ = 'users'
-
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    reg_id = db.Column(db.String(20), nullable=False)
-    role = db.Column(db.String(20))
-
-    def __repr__(self):
-        return f'<User: {self.username}, Role: {self.role}>'
-
-    def get_id(self):
-        return str(self.id)
-
-
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.query(Users).get(int(user_id))
+    return db.session.get(Users, int(user_id))
 
 
 # Function to start the camera
 def start_camera():
     global camera
-
-
-# Function to stop the camera
-def stop_camera():
-    global camera
-    if camera is not None:
-        camera.release()
-        camera = None
-
-
-# Function for comparing incoming face with encoded file
-def compare(encodeListKnown, encodeFace):
-    matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
-    faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
-    # print("matches", matches)
-    # print("faceDis", faceDis)
-    matchIndex = np.argmin(faceDis)
-    return matches, faceDis, matchIndex
-
-
-# Function to get name of student from the index given by comparing function
-def get_data(matches, matchIndex, studentIds):
-    if matches[matchIndex]:
-        student_id = studentIds[matchIndex]  # ID from face recognition
-        return student_id
-    return None  # Return None if no match found
-
-# Function which gets data of identified student from the database
-def mysqlconnect(student_id):
-    # If student_id is None, return None for all values
-    if student_id is None:
-        return None, None, None, None, None
-
-    try:
-        with app.app_context():
-            # Query student data using SQLAlchemy
-            student_data = Student_data.query.filter_by(
-                regid=student_id).first()
-
-            if student_data:
-                # If student data is found, extract values
-                id = student_data.id
-                name = student_data.name
-                roll_no = student_data.rollno
-                division = student_data.division
-                branch = student_data.branch
-
-                return id, name, roll_no, division, branch
-            else:
-                # If no student is found, return None for all values
-                return None, None, None, None, None
-
-    except Exception as e:
-        print("Error:", e)
-        return None, None, None, None, None
-    
-
-def record_attendance(name, current_date, roll_no, div, branch, reg_id):
-    try:
-        with app.app_context():
-            existing_entry = Attendance.query.filter(
-                Attendance.name == name,
-                Attendance.date == current_date
-            ).first()
-
-            current_time_str = datetime.datetime.now().strftime("%H:%M:%S")
-
-            if existing_entry:
-                existing_entry.end_time = current_time_str
-                db.session.commit()
-                print("End time updated")
-            else:
-                new_attendance = Attendance(
-                    name=name,
-                    start_time=current_time_str,
-                    end_time=current_time_str,
-                    date=current_date,
-                    roll_no=roll_no,
-                    division=div,
-                    branch=branch,
-                    reg_id=reg_id
-                )
-                db.session.add(new_attendance)
-                db.session.commit()
-                print("Start and end time recorded (first entry)")
-    except Exception as e:
-        print("Error:", e)
-
 
 # Function which does the face recognition and displaying the video feed
 def gen_frames(camera, duration=5):
@@ -462,97 +340,7 @@ def download_attendance_csv():
         error_message = 'An error occurred while generating CSV file.'
         return render_template('results.html', error=error_message)
 
-
-# Route to registration page for viewing the attendance
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    stop_camera()
-    error = None  # Initialize error variable
-    password_regex = r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
-    if request.method == 'POST':
-        username = request.form['username']
-        reg_id = request.form['reg_id']
-        password = request.form['password']
-        role = request.form['role']
-        hashed_pass = bcrypt.generate_password_hash(password).decode('utf-8')
-        # Check if username or reg_id already exists
-        existing_user = Users.query.filter_by(username=username).first()
-        existing_reg_id = Users.query.filter_by(reg_id=reg_id).first()
-
-        if existing_user:
-            error = 'Username already exists!'
-            print('Username already exists!')
-        elif existing_reg_id:
-            error = 'Registration ID already exists!'
-            print('Registration ID already exists!')
-        elif not re.match(password_regex, password):
-            error = 'Password must contain at least one uppercase letter, one symbol, one number, and be at least 8 characters long!'
-        else:
-            # Create new user
-            new_user = Users(username=username, reg_id=reg_id,
-                             password=hashed_pass, role=role)
-            db.session.add(new_user)
-            db.session.commit()
-            error = 'Registration successfull!'
-            flash('Registration successful!', 'success')
-            return render_template('login.html', error=error)
-
-    # Pass error variable to template
-    return render_template('register.html', error=error)
-
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'GET':
-        return render_template('login.html')
-    elif request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        try:
-            user = Users.query.filter(Users.username == username).first()
-
-            if user and bcrypt.check_password_hash(user.password, password):
-                login_user(user)
-                session['user_id'] = user.id
-                session['username'] = user.username
-                session['role'] = user.role
-                error_message = 'Welcome back, {}!'.format(user.username)
-                flash(error_message, 'success')
-                # Redirect based on the user's role
-                if user.role == 'admin':
-                    flash(error_message, 'success')
-                    return render_template('data.html', error=error_message)
-                elif user.role == 'teacher':
-                    flash(error_message, 'success')
-                    return render_template('results.html', error=error_message)
-                elif user.role == 'student':
-                    flash(error_message, 'success')
-                    return render_template('display_data.html', error=error_message)
-            else:
-                error_message = 'Incorrect username or password. Please try again.',
-                flash('Incorrect username or password. Please try again.', 'error')
-        except SQLAlchemyError as e:
-            error_message = 'An error occurred while processing your request. Please try again later.'
-            flash(
-                'An error occurred while processing your request. Please try again later.', 'error')
-            # Log the exception for further investigation
-            print(e)
-    # If the request method is not GET or POST, or if the login process fails for any reason
-    return render_template('login.html', error=error_message)
-
-
-def findEncodings(imageslist):
-    encodeList = []
-    for img in imageslist:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        encode = face_recognition.face_encodings(img)[0]
-        encodeList.append(encode)
-    return encodeList
-
 # Route to trigger encoding manually
-
-
 @app.route('/generate_encodings', methods=['GET', 'POST'])
 def generate_encodings():
     if request.method == 'POST':
@@ -595,15 +383,6 @@ def generate_encodings():
         return redirect(url_for('data'))
 
     return render_template('data.html', error=error_message)
-
-
-# Function for logout functionality
-@app.route('/logout', methods=['GET', 'POST'])
-def logout():
-    error_message = 'Logout Successfully!!'
-    logout_user()
-    session.clear()
-    return render_template('login.html', error=error_message)
 
 
 @app.route('/images')
