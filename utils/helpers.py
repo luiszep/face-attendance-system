@@ -7,6 +7,12 @@ from flask_bcrypt import Bcrypt
 
 bcrypt = Bcrypt()
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 # Function to stop the camera
 def stop_camera():
     from app import camera

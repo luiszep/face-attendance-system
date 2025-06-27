@@ -98,7 +98,7 @@
 
 
         <!-- Modify the form in 'results.html' to include the date input -->
-        <form action="{{ url_for('download_attendance_csv') }}" method="post">
+        <form action="{{ url_for('admin_bp.download_attendance_csv') }}" method="post">
             <input type="hidden" name="date" value="{{ request.args.get('date') }}">
             <button type="submit" class="btn btn-primary">Download CSV</button>
         </form>
