@@ -35,7 +35,7 @@
             {% for image_file in image_files %}
             <div class="col">
                 <div class="card h-100">
-                    <img src="{{ url_for('get_image', filename=image_file) }}" class="card-img-top"
+                    <img src="{{ url_for('general_bp.get_image', filename=image_file) }}" class="card-img-top"
                         alt="{{ image_file }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ image_file }}</h5>
