@@ -36,8 +36,10 @@ from models import db, Student_data, Attendance, Users
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE_DIR = os.path.join(BASE_DIR, '..', 'templates')
-STATIC_DIR = os.path.join(BASE_DIR, '..', 'static')
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
+TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend', 'templates')
+STATIC_DIR = os.path.join(ROOT_DIR, 'frontend', 'static')
+
 
 
 # Opening all the necessary files needed
