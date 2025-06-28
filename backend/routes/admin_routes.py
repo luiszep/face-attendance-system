@@ -1,12 +1,11 @@
 from flask import Blueprint, request, redirect, url_for, render_template, flash, session, current_app
 from flask_login import login_required, current_user
-from models import db, Student_data
+from models import db, Student_data, Attendance, SessionCode
 from werkzeug.utils import secure_filename
 import os
 import csv
 import io
 import logging
-from models import Attendance
 from utils.helpers import stop_camera, allowed_file
 
 admin_bp = Blueprint('admin_bp', __name__)
@@ -25,6 +24,10 @@ def data():
 @admin_bp.route('/add_user', methods=['POST'])
 @login_required
 def add_user():
+    if 'session_code_id' not in session:
+        flash('Session expired or unauthorized access.', 'error')
+        return redirect(url_for('auth_bp.login'))
+    
     name = request.form['name']
     branch = request.form['branch']
     division = request.form['division']
@@ -32,7 +35,10 @@ def add_user():
     rollno = request.form['roll_no']
 
     # Check if a student with the same name already exists
-    existing_student = Student_data.query.filter_by(name=name).first()
+    existing_student = Student_data.query.filter_by(
+        name=name,
+        session_code_id=session['session_code_id']
+    ).first()
 
     if existing_student:
         # Student already exists, handle the error (e.g., display a message)
@@ -56,15 +62,24 @@ def add_user():
 
         # Check if the file extension is allowed
         if file and allowed_file(file.filename):
-            # Secure the filename to prevent any malicious activity
-            filename = secure_filename(
-                regid + '.' + file.filename.rsplit('.', 1)[1].lower())
-            # Save the file to the upload folder
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            # Create a subfolder for this session_code_id if it doesn't exist
+            session_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], str(session['session_code_id']))
+            os.makedirs(session_folder, exist_ok=True)
+
+            # Save the file into the session-specific subfolder
+            filename = secure_filename(regid + '.' + file.filename.rsplit('.', 1)[1].lower())
+            file_path = os.path.join(session_folder, filename)
+            file.save(file_path)
 
             # Proceed to add the new student
-            user = Student_data(name=name, rollno=rollno,
-                                division=division, branch=branch, regid=regid)
+            user = Student_data(
+                name=name,
+                rollno=rollno,
+                division=division,
+                branch=branch,
+                regid=regid,
+                session_code_id=session['session_code_id']  # 🔐 Add this line
+            )
             db.session.add(user)
             db.session.commit()
             error_message = 'Student added successfully!'
@@ -80,6 +95,10 @@ def add_user():
 # Function to download the attendance of particular date in cvs format
 @admin_bp.route('/download_attendance_csv', methods=['POST'])
 def download_attendance_csv():
+    if 'session_code_id' not in session:
+        flash("Session expired or unauthorized access.", "error")
+        return redirect(url_for('auth_bp.login'))
+
     try:
         # Assuming the date is submitted via a form
         date = request.form.get('date')
@@ -88,8 +107,10 @@ def download_attendance_csv():
             return redirect(url_for('general_bp.get_attendance'))
 
         # Retrieve attendance records for the specified date
-        attendance_records = Attendance.query.filter_by(date=date).all()
-
+        attendance_records = Attendance.query.filter_by(
+            date=date,
+            session_code_id=session['session_code_id']
+        ).all()
         if not attendance_records:
             flash("No attendance records found for the specified date.")
             return redirect(url_for('general_bp.get_attendance'))

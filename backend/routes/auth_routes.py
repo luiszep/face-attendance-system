@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user
 from sqlalchemy.exc import SQLAlchemyError
 import re
 
-from models import db, Users
+from models import db, Users, SessionCode
 from utils.helpers import stop_camera, bcrypt
 
 
@@ -20,6 +20,8 @@ def register():
         reg_id = request.form['reg_id']
         password = request.form['password']
         role = request.form['role']
+        session_code_input = request.form['session_code']
+        session_code_obj = SessionCode.query.filter_by(code=session_code_input).first()
         hashed_pass = bcrypt.generate_password_hash(password).decode('utf-8')
         # Check if username or reg_id already exists
         existing_user = Users.query.filter_by(username=username).first()
@@ -33,10 +35,19 @@ def register():
             print('Registration ID already exists!')
         elif not re.match(password_regex, password):
             error = 'Password must contain at least one uppercase letter, one symbol, one number, and be at least 8 characters long!'
+        elif not session_code_obj:
+            error = 'Invalid session code. Please check and try again.'
+            print('Invalid session code entered!')
         else:
             # Create new user
-            new_user = Users(username=username, reg_id=reg_id,
-                             password=hashed_pass, role=role)
+            new_user = Users(
+                username=username,
+                reg_id=reg_id,
+                password=hashed_pass,
+                role=role,
+                session_code_id=session_code_obj.id  # 🔗 Link user to session code
+            )
+
             db.session.add(new_user)
             db.session.commit()
             error = 'Registration successfull!'
@@ -54,15 +65,23 @@ def login():
     elif request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-
+        session_code_input = request.form.get('session_code')
+        session_code_obj = SessionCode.query.filter_by(code=session_code_input).first()
+        
+        if not session_code_obj:
+            error_message = 'Invalid session code. Please check and try again.'
+            flash(error_message, 'error')
+            return render_template('login.html', error=error_message)
+        
         try:
-            user = Users.query.filter(Users.username == username).first()
+            user = Users.query.filter_by(username=username, session_code_id=session_code_obj.id).first()
 
             if user and bcrypt.check_password_hash(user.password, password):
                 login_user(user)
                 session['user_id'] = user.id
                 session['username'] = user.username
                 session['role'] = user.role
+                session['session_code_id'] = user.session_code_id
                 error_message = 'Welcome back, {}!'.format(user.username)
                 flash(error_message, 'success')
                 # Redirect based on the user's role

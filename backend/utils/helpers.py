@@ -43,7 +43,7 @@ def get_data(matches, matchIndex, studentIds):
     return None
 
 # Get student info from the database by ID
-def mysqlconnect(student_id):
+def mysqlconnect(student_id, session_code_id):
     from app import Student_data, app
 
     if student_id is None:
@@ -51,7 +51,7 @@ def mysqlconnect(student_id):
 
     try:
         with app.app_context():
-            student_data = Student_data.query.filter_by(regid=student_id).first()
+            student_data = Student_data.query.filter_by(regid=student_id, session_code_id=session_code_id).first()
             if student_data:
                 return (
                     student_data.id,
@@ -67,14 +67,15 @@ def mysqlconnect(student_id):
         return None, None, None, None, None
 
 # Record or update attendance entry
-def record_attendance(name, current_date, roll_no, div, branch, reg_id):
+def record_attendance(name, current_date, roll_no, div, branch, reg_id, session_code_id):
     from app import db, Attendance, app
 
     try:
         with app.app_context():
-            existing_entry = Attendance.query.filter(
-                Attendance.name == name,
-                Attendance.date == current_date
+            existing_entry = Attendance.query.filter_by(
+                reg_id=reg_id,
+                date=current_date,
+                session_code_id=session_code_id
             ).first()
 
             current_time_str = datetime.now().strftime("%H:%M:%S")
@@ -92,10 +93,12 @@ def record_attendance(name, current_date, roll_no, div, branch, reg_id):
                     roll_no=roll_no,
                     division=div,
                     branch=branch,
-                    reg_id=reg_id
+                    reg_id=reg_id,
+                    session_code_id=session_code_id
                 )
                 db.session.add(new_attendance)
                 db.session.commit()
+                print(f"Recorded for {reg_id} in session {session_code_id}")
                 print("Start and end time recorded (first entry)")
     except Exception as e:
         print("Error:", e)

@@ -32,7 +32,7 @@ from utils.helpers import (
     bcrypt,
     stop_camera,
 )
-from models import db, Student_data, Attendance, Users
+from models import db, Student_data, Attendance, Users, SessionCode
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,19 +40,15 @@ ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
 TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend', 'templates')
 STATIC_DIR = os.path.join(ROOT_DIR, 'frontend', 'static')
 
-
-
-# Opening all the necessary files needed
+# Load configuration from config.json
+import json
 with open('config.json') as p:
     params = json.load(p)['params']
-encoding_file_path = params['encoding_file_path']
-file = open(encoding_file_path, 'rb')
-encodeListKnownWithIds = pickle.load(file)
-file.close()
-encodeListKnown, studentIds = encodeListKnownWithIds
+
 
 # App configs
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
+app.config['params'] = params
 app.config['SECRET_KEY'] = params['secret_key']
 app.config['SQLALCHEMY_DATABASE_URI'] = params['sql_url']
 db.init_app(app)
@@ -66,6 +62,7 @@ key_path = params['key_path']
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
 
 # Register route modules
 from routes.auth_routes import auth_bp
@@ -91,7 +88,29 @@ def start_camera():
     global camera
 
 # Function which does the face recognition and displaying the video feed
-def gen_frames(camera, duration=5):
+def gen_frames(camera, session_code_id, duration=5):
+    from flask import session
+    import os
+    import pickle
+
+    # Step 1: Get session code
+    if not session_code_id:
+        print("Session code missing. Cannot load encodings.")
+        return  # or yield an error frame
+
+    # Step 2: Construct dynamic encoding path
+    encoding_file_path = f"Resources/EncodeFile_{session_code_id}.p"
+
+    # Step 3: Check if the file exists
+    if not os.path.exists(encoding_file_path):
+        print(f"Encoding file not found: {encoding_file_path}")
+        return  # or yield an error frame
+
+    # Step 4: Load encodings
+    with open(encoding_file_path, 'rb') as file:
+        encodeListKnownWithIds = pickle.load(file)
+    encodeListKnown, studentIds = encodeListKnownWithIds
+
     start_time = time.time()
 
     while camera is not None and (time.time() - start_time < duration):
@@ -106,7 +125,7 @@ def gen_frames(camera, duration=5):
         for encodeFace, faceLoc in zip(encodeCurFrame, faceCurFrame):
             matches, facedis, matchIndex = compare(encodeListKnown, encodeFace)
             student_id = get_data(matches, matchIndex, studentIds)
-            data = mysqlconnect(student_id)
+            data = mysqlconnect(student_id, session_code_id)  # ✅ GOOD
             name = data[1]
             roll_no = data[2]
             div = data[3]
@@ -123,12 +142,25 @@ def gen_frames(camera, duration=5):
                         (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
             current_date = datetime.datetime.now().date()
             if student_id:
-                t = threading.Thread(target=record_attendance, args=(name, current_date, roll_no, div, branch, reg_id))
+                t = threading.Thread(target=record_attendance, args=(name, current_date, roll_no, div, branch, reg_id, session_code_id))
                 t.start()
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+@app.route('/enter-session', methods=['GET', 'POST'])
+def enter_session():
+    if request.method == 'POST':
+        entered_code = request.form.get('session_code_id')
+        if entered_code:
+            session['session_code_id'] = entered_code
+            flash("Session code accepted!", "success")
+            return redirect(url_for('start_scan', camera_id=1))  # or wherever
+        else:
+            flash("Please enter a valid session code.", "error")
+    return render_template('enter_session.html')
 
 
 # Route of video feed to flask webpage on index page
@@ -137,7 +169,9 @@ def video1():
     try:
         camera1 = params['camera_index_1']
         camera = cv2.VideoCapture(camera1)
-        return Response(gen_frames(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+        session_code_id = session.get('session_code_id')
+
+        return Response(gen_frames(camera, session_code_id), mimetype='multipart/x-mixed-replace; boundary=frame')
     except Exception as e:
         print("Error:", e)
         return "Error connecting to the video stream"
@@ -148,7 +182,9 @@ def video2():
     try:
         camera2 = params['camera_index_2']
         camera = cv2.VideoCapture(camera2)
-        return Response(gen_frames(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+        session_code_id = session.get('session_code_id')
+
+        return Response(gen_frames(camera, session_code_id), mimetype='multipart/x-mixed-replace; boundary=frame')
     except Exception as e:
         print("Error:", e)
         return "Error connecting to the video stream"
@@ -156,6 +192,20 @@ def video2():
 
 @app.route('/scan/<int:camera_id>')
 def start_scan(camera_id):
+    session_code_str = session.get('session_code_id')
+    if not session_code_str:
+        flash("Please enter your session code before scanning.", "error")
+        return redirect(url_for('enter_session'))
+
+    # Convert session code string to numeric session ID
+    session_obj = SessionCode.query.filter_by(code=session_code_str).first()
+    if not session_obj:
+        flash("Invalid session code.", "error")
+        return redirect(url_for('enter_session'))
+
+    session_id = session_obj.id  # 👈 This will match your file suffix (e.g. 1 → EncodeFile_1.p)
+
+        
     try:
         if camera_id == 1:
             cam_index = params['camera_index_1']
@@ -165,7 +215,8 @@ def start_scan(camera_id):
             return "Invalid camera ID"
 
         camera = cv2.VideoCapture(cam_index)
-        return Response(gen_frames(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+        return Response(gen_frames(camera, session_id), mimetype='multipart/x-mixed-replace; boundary=frame')
 
     except Exception as e:
         print("Error in scan route:", e)
@@ -175,16 +226,20 @@ def start_scan(camera_id):
 # Route to trigger encoding manually
 @app.route('/generate_encodings', methods=['GET', 'POST'])
 def generate_encodings():
+    if 'session_code_id' not in session:
+        flash("Session expired or unauthorized access.", "error")
+        return redirect(url_for('auth_bp.login'))
+
     if request.method == 'POST':
         # Delete existing encoding file if it exists
-        encoding_file_path = "Resources/EncodeFile.p"
+        encoding_file_path = f"Resources/EncodeFile_{session['session_code_id']}.p"
         if os.path.exists(encoding_file_path):
             os.remove(encoding_file_path)
             print("File removed")
             flash("File Removed")
 
         # Importing the student images
-        folderPath = 'uploads'
+        folderPath = os.path.join('uploads', str(session['session_code_id']))
         pathList = os.listdir(folderPath)
         imgList = []
         studentIds = []

@@ -15,6 +15,11 @@ class Student_data(db.Model):
     branch = db.Column(db.String(80), nullable=False)
     regid = db.Column(db.String(80), unique=True, nullable=False)
 
+    # Foreign key to link to session codes
+    session_code_id = db.Column(db.Integer, db.ForeignKey('session_code.id'), nullable=False)
+
+    
+
 
 # Model of Attendance table
 class Attendance(db.Model):
@@ -28,6 +33,9 @@ class Attendance(db.Model):
     division = db.Column(db.String(10))
     branch = db.Column(db.String(100))
     reg_id = db.Column(db.String(100))
+
+    # Foreign key to link to session codes
+    session_code_id = db.Column(db.Integer, db.ForeignKey('session_code.id'), nullable=False)
 
     __table_args__ = (
     db.UniqueConstraint('name', 'date', name='uix_name_date'),
@@ -44,9 +52,21 @@ class Users(db.Model, UserMixin):
     reg_id = db.Column(db.String(20), nullable=False)
     role = db.Column(db.String(20))
 
+    # Foreign key to link to session codes
+    session_code_id = db.Column(db.Integer, db.ForeignKey('session_code.id'), nullable=False)
+
+
     def __repr__(self):
         return f'<User: {self.username}, Role: {self.role}>'
 
     def get_id(self):
         return str(self.id)
+    
 
+# Model of session codes table
+class SessionCode(db.Model):
+    __tablename__ = 'session_code'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(50), unique=True, nullable=False)  # e.g., 'school-abc-123'
+    business_name = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
