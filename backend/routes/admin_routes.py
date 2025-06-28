@@ -123,20 +123,21 @@ def download_attendance_csv():
         for record in attendance_records:
             writer.writerow([record.name, record.start_time, record.end_time, record.date,
                             record.roll_no, record.division, record.branch, record.reg_id])
+        
+        # Set the response headers for CSV download
+        from flask import Response
 
-        # Save CSV file to a specified folder
-        folder_path = 'downloads'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+        session_id = session['session_code_id']
+        filename = f"attendance_records_{session_id}_{date}.csv"
 
-        file_path = os.path.join(folder_path, f"attendance_records_{date}.csv")
-        with open(file_path, 'w') as f:
-            # Remove trailing newline characters
-            f.write(output.getvalue().strip())
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
 
-        flash("Attendance records downloaded successfully.")
-        error_message = 'Attendance records downloaded successfully.'
-        return render_template('results.html', error=error_message)
     except Exception as e:
         logging.exception(
             "Error occurred while generating CSV file: %s", str(e))
