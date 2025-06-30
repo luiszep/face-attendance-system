@@ -249,20 +249,27 @@ def generate_encodings():
     # --- Render page for GET request ---
     return render_template('data.html')
 
-
-
-# Route to the index page where the camera feed is displayed
+# --- Index Route ---
 @app.route('/')
 def index():
+    """
+    Home route where the camera feed interface is displayed.
+    Redirects users to session entry if no valid session code is found.
+    """
     if 'session_code_id' not in session:
         flash("Please enter a valid session code first.", "error")
         return redirect(url_for('enter_session'))
     return render_template('index.html')
 
-
 # --- App Entry Point ---
 if __name__ == '__main__':
-    # app.run(debug=True,ssl_context=("cert.pem", "key.pem"))
-    # app.run(debug=True)
-    hostedapp.run(debug=True, ssl_context=(
-        cert_path, key_path), host='0.0.0.0')
+    """
+    Entry point for launching the app in development mode.
+    Uses HTTPS with specified certificate and key files.
+    Hosts the mounted app (served under "/Attendance_system") on all network interfaces.
+    """
+    hostedapp.run(
+        debug=True,
+        ssl_context=(cert_path, key_path),
+        host='0.0.0.0'
+    )
