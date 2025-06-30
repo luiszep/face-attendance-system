@@ -81,20 +81,6 @@ def load_user(user_id):
     return db.session.get(Users, int(user_id))
 
 
-# --- Camera Control Functions ---
-def start_camera():
-    """Placeholder for starting a global camera instance."""
-    global camera
-    # Note: camera assignment handled in scan/video routes directly
-
-def stop_camera():
-    """Releases and cleans up the global camera resource."""
-    global camera
-    if camera is not None:
-        camera.release()
-        camera = None
-
-
 def gen_frames(camera, session_code_id, duration=5):
     """
     Generate video frames with real-time face recognition and attendance recording.
@@ -194,7 +180,7 @@ def enter_session():
             flash("Please enter a valid session code.", "error")
     return render_template('enter_session.html')
     
-    
+
 
 @app.route('/scan/<int:camera_id>')
 def start_scan(camera_id):
@@ -287,7 +273,6 @@ def index():
     if 'session_code_id' not in session:
         flash("Please enter a valid session code first.", "error")
         return redirect(url_for('enter_session'))
-    start_camera()
     return render_template('index.html')
 
 
