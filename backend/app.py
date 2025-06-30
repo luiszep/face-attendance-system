@@ -61,39 +61,41 @@ hostedapp.wsgi_app = DispatcherMiddleware(NotFound(), {
     "/Attendance_system": app
 })
 
-
-# CONTINUE HERE
-
-
-# Register route modules
+# --- Blueprint Registration ---
 from routes.auth_routes import auth_bp
 from routes.general_routes import general_bp
 from routes.admin_routes import admin_bp
 
+# Register app routes
 app.register_blueprint(auth_bp)
 app.register_blueprint(general_bp)
 app.register_blueprint(admin_bp)
 
+# --- Global Camera Instance ---
+camera = None  # Will store the active OpenCV camera object (cv2.VideoCapture)
 
-# Variables defined
-camera = None  # Global variable to store camera object
-
-
+# --- User Loader for Flask-Login ---
 @login_manager.user_loader
 def load_user(user_id):
+    """Flask-Login: Load user by ID."""
     return db.session.get(Users, int(user_id))
 
 
-# Function to start the camera
+# --- Camera Control Functions ---
 def start_camera():
+    """Placeholder for starting a global camera instance."""
     global camera
+    # Note: camera assignment handled in scan/video routes directly
 
-# Function to stop the camera
 def stop_camera():
+    """Releases and cleans up the global camera resource."""
     global camera
     if camera is not None:
         camera.release()
         camera = None
+
+
+
 
 # Function which does the face recognition and displaying the video feed
 def gen_frames(camera, session_code_id, duration=5):
@@ -286,7 +288,7 @@ def index():
     return render_template('index.html')
 
 
-# Function to start to the app
+# --- App Entry Point ---
 if __name__ == '__main__':
     # app.run(debug=True,ssl_context=("cert.pem", "key.pem"))
     # app.run(debug=True)
