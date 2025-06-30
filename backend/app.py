@@ -1,67 +1,68 @@
-from flask import Flask, render_template, Response, flash, request, redirect, url_for, session, send_from_directory
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from flask_bcrypt import Bcrypt
+# --- Standard library ---
+import os
+import time
+import json
+import threading
+import datetime
+
+# --- Third-party ---
+import cv2
+import cvzone
+import pickle
+import face_recognition
+
+from flask import Flask, render_template, Response, flash, request, redirect, url_for, session
+from flask_login import LoginManager
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import asc
-from werkzeug.utils import secure_filename
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.exceptions import NotFound
-from sqlalchemy.exc import SQLAlchemyError
-import cv2
-import pickle
-import numpy as np
-import face_recognition
-import cvzone
-import datetime
-from datetime import time as datetime_time
-import time
-import threading
-import os
-import csv
-import io
-import logging
-import json
-import re
+
+# --- Local modules ---
 from utils.helpers import (
     findEncodings,
     compare,
     get_data,
     mysqlconnect,
     record_attendance,
-    bcrypt,
-    stop_camera,
 )
 from models import db, Student_data, Attendance, Users, SessionCode
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
-TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend', 'templates')
-STATIC_DIR = os.path.join(ROOT_DIR, 'frontend', 'static')
+# --- App Directory Paths ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # This file's directory
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))  # Root project directory
+TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend', 'templates')  # HTML templates
+STATIC_DIR = os.path.join(ROOT_DIR, 'frontend', 'static')      # static assets
 
-# Load configuration from config.json
-import json
-with open('config.json') as p:
-    params = json.load(p)['params']
+# --- Load Configuration from JSON File ---
+with open('config.json') as config_file:
+    params = json.load(config_file)['params']
 
-
-# App configs
+# --- Flask App Initialization ---
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config['params'] = params
 app.config['SECRET_KEY'] = params['secret_key']
 app.config['SQLALCHEMY_DATABASE_URI'] = params['sql_url']
-db.init_app(app)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = params['upload_folder']
-hostedapp = Flask(__name__)
-hostedapp.wsgi_app = DispatcherMiddleware(
-    NotFound(), {"/Attendance_system": app})
-cert_path = params['cert_path']
-key_path = params['key_path']
+
+# --- Initialize Extensions ---
+db.init_app(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# --- Certificate Paths for HTTPS ---
+cert_path = params['cert_path']
+key_path = params['key_path']
+
+# --- Dispatcher Middleware (Mounting Flask App under "/Attendance_system") ---
+hostedapp = Flask(__name__)  # Container app to serve Flask under a subpath
+hostedapp.wsgi_app = DispatcherMiddleware(NotFound(), {
+    "/Attendance_system": app
+})
+
+
+# CONTINUE HERE
 
 
 # Register route modules
@@ -87,12 +88,15 @@ def load_user(user_id):
 def start_camera():
     global camera
 
+# Function to stop the camera
+def stop_camera():
+    global camera
+    if camera is not None:
+        camera.release()
+        camera = None
+
 # Function which does the face recognition and displaying the video feed
 def gen_frames(camera, session_code_id, duration=5):
-    from flask import session
-    import os
-    import pickle
-
     # Step 1: Get session code
     if not session_code_id:
         print("Session code missing. Cannot load encodings.")
@@ -157,7 +161,7 @@ def enter_session():
         if entered_code:
             session['session_code_id'] = entered_code
             flash("Session code accepted!", "success")
-            return redirect(url_for('start_scan', camera_id=1))  # or wherever
+            return redirect(url_for('index'))
         else:
             flash("Please enter a valid session code.", "error")
     return render_template('enter_session.html')
@@ -275,6 +279,9 @@ def generate_encodings():
 # Route to the index page where the camera feed is displayed
 @app.route('/')
 def index():
+    if 'session_code_id' not in session:
+        flash("Please enter a valid session code first.", "error")
+        return redirect(url_for('enter_session'))
     start_camera()
     return render_template('index.html')
 

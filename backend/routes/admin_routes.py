@@ -15,7 +15,6 @@ admin_bp = Blueprint('admin_bp', __name__)
 @login_required
 def data():
     if current_user.role == 'admin':
-        stop_camera()
         return render_template('data.html')
     else:
         return 'UnAuthorized Access'

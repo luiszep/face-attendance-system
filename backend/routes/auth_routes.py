@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import re
 
 from models import db, Users, SessionCode
-from utils.helpers import stop_camera, bcrypt
+from utils.helpers import bcrypt
 
 
 auth_bp = Blueprint('auth_bp', __name__)
@@ -12,7 +12,6 @@ auth_bp = Blueprint('auth_bp', __name__)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    stop_camera()
     error = None  # Initialize error variable
     password_regex = r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
     if request.method == 'POST':

@@ -34,7 +34,6 @@ def display_attendance():
         flash('Session expired or unauthorized access.', 'error')
         return redirect(url_for('auth_bp.login'))
 
-    stop_camera()
     current_date = datetime.datetime.now().date()
     try:
         input_date = None
@@ -75,7 +74,6 @@ def get_attendance():
         return redirect(url_for('auth_bp.login'))
 
     if current_user.role == 'teacher':
-        stop_camera()
 
         try:
             date_filter = request.form.get('date') if request.method == 'POST' else None
