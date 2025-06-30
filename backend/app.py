@@ -175,9 +175,15 @@ def gen_frames(camera, session_code_id, duration=5):
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
-
+# --- Flask Routes ---
 @app.route('/enter-session', methods=['GET', 'POST'])
 def enter_session():
+    """
+    Route to enter a session code manually before accessing the scanner.
+
+    GET: Renders the form for entering a session code.
+    POST: Saves the session code to session and redirects to index if valid.
+    """
     if request.method == 'POST':
         entered_code = request.form.get('session_code_id')
         if entered_code:
@@ -187,33 +193,7 @@ def enter_session():
         else:
             flash("Please enter a valid session code.", "error")
     return render_template('enter_session.html')
-
-
-# Route of video feed to flask webpage on index page
-@app.route('/video1')
-def video1():
-    try:
-        camera1 = params['camera_index_1']
-        camera = cv2.VideoCapture(camera1)
-        session_code_id = session.get('session_code_id')
-
-        return Response(gen_frames(camera, session_code_id), mimetype='multipart/x-mixed-replace; boundary=frame')
-    except Exception as e:
-        print("Error:", e)
-        return "Error connecting to the video stream"
-
-
-@app.route('/video2')
-def video2():
-    try:
-        camera2 = params['camera_index_2']
-        camera = cv2.VideoCapture(camera2)
-        session_code_id = session.get('session_code_id')
-
-        return Response(gen_frames(camera, session_code_id), mimetype='multipart/x-mixed-replace; boundary=frame')
-    except Exception as e:
-        print("Error:", e)
-        return "Error connecting to the video stream"
+    
     
 
 @app.route('/scan/<int:camera_id>')
