@@ -144,7 +144,7 @@ def gen_frames(camera, session_code_id, duration=5):
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
-# --- Flask Routes ---
+# --- Route to enter session code manually ---
 @app.route('/enter-session', methods=['GET', 'POST'])
 def enter_session():
     """
@@ -162,6 +162,7 @@ def enter_session():
             flash("Please enter a valid session code.", "error")
     return render_template('enter_session.html')
 
+# --- Route to start live face recognition scan ---
 @app.route('/scan/<int:camera_id>')
 def start_scan(camera_id):
     """
@@ -201,58 +202,53 @@ def start_scan(camera_id):
         print(f"[ERROR] Scan route failed: {e}")
         return "Error starting scan"
 
-
-
-# Route to trigger encoding manually
+# --- Route to trigger face encoding generation manually ---
 @app.route('/generate_encodings', methods=['GET', 'POST'])
 def generate_encodings():
+    """
+    Admin-only route to generate facial encodings for uploaded student images.
+    GET  -> Renders the admin data upload page.
+    POST -> Deletes existing encoding file (if any), processes student images,
+            generates encodings, saves to .p file, and flashes status updates.
+    """
     if 'session_code_id' not in session:
         flash("Session expired or unauthorized access.", "error")
         return redirect(url_for('auth_bp.login'))
-
     if request.method == 'POST':
-        # Delete existing encoding file if it exists
-
+        session_id = session['session_code_id']
+        # --- Build path to encoding file ---
         encoding_dir = app.config['params'].get('encoding_dir', 'Resources')
-        encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session['session_code_id']}.p")
-
+        encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_id}.p")
+        # --- Remove previous encoding file if it exists ---
         if os.path.exists(encoding_file_path):
             os.remove(encoding_file_path)
-            print("File removed")
-            flash("File Removed")
-
-        # Importing the student images
-        folderPath = os.path.join('uploads', str(session['session_code_id']))
-        pathList = os.listdir(folderPath)
-        imgList = []
-        studentIds = []
-        for path in pathList:
-            imgList.append(cv2.imread(os.path.join(folderPath, path)))
-            studentIds.append(os.path.splitext(path)[0])
-            print(os.path.splitext(path)[0])
-        # Generate encodings
+            print("Old encoding file removed.")
+            flash("Old encoding file removed.", "info")
+        # --- Load student images from upload folder ---
+        folder_path = os.path.join('uploads', str(session_id))
+        path_list = os.listdir(folder_path)
+        img_list, student_ids = [], []
+        for path in path_list:
+            img_list.append(cv2.imread(os.path.join(folder_path, path)))
+            student_ids.append(os.path.splitext(path)[0])
+            print(f"[INFO] Found image for student ID: {student_ids[-1]}")
+        # --- Generate and save encodings ---
         try:
-            print("Encoding started...")
-            error_message = 'Encoding started...'
+            print("[INFO] Encoding started...")
             flash("Encoding started...", "success")
-            encodeListKnown = findEncodings(imgList)
-            encodeListKnownWithIds = [encodeListKnown, studentIds]
-            print("Encoding complete")
-            error_message = 'Encoding complete'
-            flash("Encoding complete", "success")
+            encode_list_known = findEncodings(img_list)
+            encode_list_with_ids = [encode_list_known, student_ids]
             with open(encoding_file_path, 'wb') as file:
-                pickle.dump(encodeListKnownWithIds, file)
-            print("File Saved")
-            error_message = 'Encodings generated successfully!'
-            flash('Encodings generated successfully!', 'success')
+                pickle.dump(encode_list_with_ids, file)
+            print("[INFO] Encoding complete. File saved.")
+            flash("Encodings generated successfully!", "success")
         except Exception as e:
-            print("Error:", e)
-            flash('Error occurred while generating encodings.', 'error')
-
-        # Redirect to homepage or any other page after encoding
+            print(f"[ERROR] Encoding failed: {e}")
+            flash("Error occurred while generating encodings.", "error")
         return redirect(url_for('admin_bp.data'))
+    # --- Render page for GET request ---
+    return render_template('data.html')
 
-    return render_template('data.html', error=error_message)
 
 
 # Route to the index page where the camera feed is displayed
