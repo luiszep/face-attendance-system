@@ -7,7 +7,7 @@
         "evening_time": "19",
         "cert_path": "keys/cert.pem",
         "key_path": "keys/key.pem",
-        "encoding_file_path": "Resources/EncodeFile.p",
+        "encoding_dir": "Resources",
         "upload_folder": "uploads",
         "secret_key":"8cbd88d94e117dad6342c4ac666980a97e4200a5cd34ab4ec03574d5629bdda6"
     }

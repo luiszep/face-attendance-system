@@ -95,65 +95,85 @@ def stop_camera():
         camera = None
 
 
-
-
-# Function which does the face recognition and displaying the video feed
 def gen_frames(camera, session_code_id, duration=5):
-    # Step 1: Get session code
+    """
+    Generate video frames with real-time face recognition and attendance recording.
+    
+    Args:
+        camera: OpenCV VideoCapture object.
+        session_code_id: Numeric ID for the session (used to load encodings).
+        duration: Time limit for the stream in seconds (default is 5).
+    
+    Yields:
+        Encoded JPEG frames for HTTP multipart response.
+    """
+
+    # --- Validate session and encoding file ---
     if not session_code_id:
         print("Session code missing. Cannot load encodings.")
-        return  # or yield an error frame
+        return
+    
+    # Get encoding directory from config
+    encoding_dir = app.config['params'].get('encoding_dir', 'Resources')
+    encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_code_id}.p")
 
-    # Step 2: Construct dynamic encoding path
-    encoding_file_path = f"Resources/EncodeFile_{session_code_id}.p"
-
-    # Step 3: Check if the file exists
     if not os.path.exists(encoding_file_path):
         print(f"Encoding file not found: {encoding_file_path}")
-        return  # or yield an error frame
+        return
 
-    # Step 4: Load encodings
+    # --- Load known encodings and associated student IDs ---
     with open(encoding_file_path, 'rb') as file:
         encodeListKnownWithIds = pickle.load(file)
     encodeListKnown, studentIds = encodeListKnownWithIds
 
+    # --- Start streaming frames ---
     start_time = time.time()
 
     while camera is not None and (time.time() - start_time < duration):
         success, frame = camera.read()
         if not success:
             break
+
+        # Resize and convert frame for faster face recognition
         imgS = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
         imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+
         faceCurFrame = face_recognition.face_locations(imgS)
         encodeCurFrame = face_recognition.face_encodings(imgS, faceCurFrame)
 
+        # --- Match and annotate faces ---
         for encodeFace, faceLoc in zip(encodeCurFrame, faceCurFrame):
             matches, facedis, matchIndex = compare(encodeListKnown, encodeFace)
             student_id = get_data(matches, matchIndex, studentIds)
-            data = mysqlconnect(student_id, session_code_id)  # ✅ GOOD
-            name = data[1]
-            roll_no = data[2]
-            div = data[3]
-            branch = data[4]
-            reg_id = student_id
+            data = mysqlconnect(student_id, session_code_id)
+
+            name, roll_no, div, branch, reg_id = data[1], data[2], data[3], data[4], student_id
             print(name)
-            y1, x2, y2, x1 = faceLoc
-            y1, x2, y2, x1 = y1*4, x2*4, y2*4, x1*4
+
+            # Scale face location back to original frame size
+            y1, x2, y2, x1 = [v * 4 for v in faceLoc]
             bbox = x1, y1, x2 - x1, y2 - y1
+
+            # Draw bounding box and label
             imgBackground = cvzone.cornerRect(frame, bbox, rt=0)
-            cv2.putText(frame, name, (bbox[0], bbox[1] - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9,
-                        (255, 255, 0), 3, lineType=cv2.LINE_AA)
-            cv2.putText(imgBackground, reg_id,
-                        (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
-            current_date = datetime.datetime.now().date()
+            cv2.putText(frame, name, (bbox[0], bbox[1] - 35),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 3, lineType=cv2.LINE_AA)
+            cv2.putText(imgBackground, reg_id, (bbox[0], bbox[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+
+            # Record attendance in a separate thread
             if student_id:
-                t = threading.Thread(target=record_attendance, args=(name, current_date, roll_no, div, branch, reg_id, session_code_id))
+                current_date = datetime.datetime.now().date()
+                t = threading.Thread(target=record_attendance,
+                                     args=(name, current_date, roll_no, div, branch, reg_id, session_code_id))
                 t.start()
+
+        # Encode frame as JPEG and yield to browser
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
 
 
 @app.route('/enter-session', methods=['GET', 'POST'])
@@ -238,7 +258,10 @@ def generate_encodings():
 
     if request.method == 'POST':
         # Delete existing encoding file if it exists
-        encoding_file_path = f"Resources/EncodeFile_{session['session_code_id']}.p"
+
+        encoding_dir = app.config['params'].get('encoding_dir', 'Resources')
+        encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session['session_code_id']}.p")
+
         if os.path.exists(encoding_file_path):
             os.remove(encoding_file_path)
             print("File removed")
