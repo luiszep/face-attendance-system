@@ -17,21 +17,24 @@ def allowed_file(filename):
     """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 # --- Encode known student images ---
 def findEncodings(imageslist):
     """
     Generate face encodings for a list of student images.
+    Skips any images that do not contain a detectable face.
     Args:
         imageslist (list): List of images (as NumPy arrays).
     Returns:
         list: List of 128-dimension face encodings.
     """
     encodeList = []
-    for img in imageslist:
+    for idx, img in enumerate(imageslist):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert image to RGB (required by face_recognition)
-        encode = face_recognition.face_encodings(img)[0]  # Get encoding for the first detected face
-        encodeList.append(encode)
+        encodings = face_recognition.face_encodings(img)
+        if encodings:
+            encodeList.append(encodings[0])  # Use the first detected face (as before)
+        else:
+            print(f"[WARN] No face found in image at index {idx}. Skipping.")
     return encodeList
 
 # --- Compare incoming face with known encodings ---
