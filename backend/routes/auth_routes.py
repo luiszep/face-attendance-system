@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from flask_login import login_user, logout_user, current_user
 from sqlalchemy.exc import SQLAlchemyError
+from flask_bcrypt import Bcrypt
 import re
 
 from models import db, Users, SessionCode
-from utils.helpers import bcrypt
 
+bcrypt = Bcrypt()
 
 auth_bp = Blueprint('auth_bp', __name__)
 

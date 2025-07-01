@@ -6,7 +6,7 @@ import os
 import csv
 import io
 import logging
-from utils.helpers import stop_camera, allowed_file
+from utils.helpers import allowed_file
 
 admin_bp = Blueprint('admin_bp', __name__)
 

@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from sqlalchemy import asc
 from models import Attendance, Student_data, Users, db, SessionCode
-from utils.helpers import stop_camera
 import datetime, csv, os, logging, io
 
 general_bp = Blueprint('general_bp', __name__)
