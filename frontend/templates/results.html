@@ -131,6 +131,10 @@
 
         {% if request.args.get('start_date') and request.args.get('end_date') %}
         <form action="{{ url_for('admin_bp.download_attendance_csv') }}" method="post">
+            <input type="hidden" name="name" value="{{ request.args.get('name', '') }}">
+            <input type="hidden" name="reg_id" value="{{ request.args.get('reg_id', '') }}">
+            <input type="hidden" name="branch" value="{{ request.args.get('branch', '') }}">
+            <input type="hidden" name="division" value="{{ request.args.get('division', '') }}">
             <input type="hidden" name="start_date" value="{{ request.args.get('start_date') }}">
             <input type="hidden" name="end_date" value="{{ request.args.get('end_date') }}">
             <button type="submit" class="btn btn-primary">Download CSV</button>

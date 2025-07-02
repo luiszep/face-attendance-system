@@ -96,45 +96,72 @@ def add_user():
 @admin_bp.route('/download_attendance_csv', methods=['POST'])
 def download_attendance_csv():
     """
-    Allow an admin to download attendance records as a CSV for a date range.
-    - Requires valid session_code_id
-    - Expects 'start_date' and 'end_date' in form POST
-    - Returns CSV file with attendance details
+    Allow an admin to download filtered attendance records as a CSV for a date range.
+    - Requires session_code_id
+    - Filters based on optional fields (name, reg_id, branch, division)
+    - Requires start_date and end_date
     """
     from flask import Response
-    from datetime import datetime, timedelta
+    import io
+    import csv
+    from datetime import datetime
+    from sqlalchemy import and_
+
     if 'session_code_id' not in session:
         flash("Session expired or unauthorized access.", "error")
         return redirect(url_for('auth_bp.login'))
+
     try:
-        # Extract dates
+        # Extract required dates
         start_date_str = request.form.get('start_date')
         end_date_str = request.form.get('end_date')
+
         if not start_date_str or not end_date_str:
             flash("Start and end dates must be provided.")
             return redirect(url_for('general_bp.get_attendance'))
+
         try:
             start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
             end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         except ValueError:
             flash("Invalid date format. Please use YYYY-MM-DD.")
             return redirect(url_for('general_bp.get_attendance'))
+
         if start_date > end_date:
             flash("Start date must be before or equal to end date.")
             return redirect(url_for('general_bp.get_attendance'))
+
         if (end_date - start_date).days > 45:
             flash("Date range cannot exceed 45 days.")
             return redirect(url_for('general_bp.get_attendance'))
-        # Query attendance within range
-        attendance_records = Attendance.query.filter(
-            Attendance.date >= start_date,
-            Attendance.date <= end_date,
-            Attendance.session_code_id == session['session_code_id']
-        ).all()
+
+        # Build filters
+        filters = [Attendance.session_code_id == session['session_code_id']]
+        filters.append(Attendance.date.between(start_date, end_date))
+
+        # Optional filters from form
+        name = request.form.get('name')
+        reg_id = request.form.get('reg_id')
+        branch = request.form.get('branch')
+        division = request.form.get('division')
+
+        if name:
+            filters.append(Attendance.name.ilike(f"%{name}%"))
+        if reg_id:
+            filters.append(Attendance.reg_id.ilike(f"%{reg_id}%"))
+        if branch:
+            filters.append(Attendance.branch.ilike(f"%{branch}%"))
+        if division:
+            filters.append(Attendance.division.ilike(f"%{division}%"))
+
+        # Final query
+        attendance_records = Attendance.query.filter(and_(*filters)).all()
+
         if not attendance_records:
-            flash("No attendance records found for the specified date range.")
+            flash("No attendance records found for the specified filters.")
             return redirect(url_for('general_bp.get_attendance'))
-        # Prepare CSV
+
+        # Create CSV content
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow([
@@ -146,14 +173,15 @@ def download_attendance_csv():
                 record.name, record.start_time, record.end_time, record.date,
                 record.roll_no, record.division, record.branch, record.reg_id
             ])
-        session_id = session['session_code_id']
-        filename = f"attendance_records_{session_id}_{start_date}_to_{end_date}.csv"
+
+        filename = f"attendance_records_{start_date}_to_{end_date}.csv"
         return Response(
             output.getvalue(),
             mimetype='text/csv',
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
+
     except Exception as e:
-        logging.exception("Error occurred while generating CSV file: %s", str(e))
-        flash("An error occurred while generating CSV file.")
-        return render_template('results.html', error="An error occurred while generating CSV file.")
+        logging.exception("Error generating CSV file: %s", str(e))
+        flash("An error occurred while generating the CSV file.")
+        return redirect(url_for('general_bp.get_attendance'))
