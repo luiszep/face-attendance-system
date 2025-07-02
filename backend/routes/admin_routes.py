@@ -96,30 +96,45 @@ def add_user():
 @admin_bp.route('/download_attendance_csv', methods=['POST'])
 def download_attendance_csv():
     """
-    Allow an admin to download attendance records as a CSV for a specific date.
+    Allow an admin to download attendance records as a CSV for a date range.
     - Requires valid session_code_id
-    - Expects 'date' field in form POST
+    - Expects 'start_date' and 'end_date' in form POST
     - Returns CSV file with attendance details
     """
-    # Ensure session is valid
+    from flask import Response
+    from datetime import datetime, timedelta
     if 'session_code_id' not in session:
         flash("Session expired or unauthorized access.", "error")
         return redirect(url_for('auth_bp.login'))
     try:
-        # Get the date from form data
-        date = request.form.get('date')
-        if not date:
-            flash("Date not provided for downloading.")
+        # Extract dates
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        if not start_date_str or not end_date_str:
+            flash("Start and end dates must be provided.")
             return redirect(url_for('general_bp.get_attendance'))
-        # Query attendance records for the given date and session
-        attendance_records = Attendance.query.filter_by(
-            date=date,
-            session_code_id=session['session_code_id']
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            flash("Invalid date format. Please use YYYY-MM-DD.")
+            return redirect(url_for('general_bp.get_attendance'))
+        if start_date > end_date:
+            flash("Start date must be before or equal to end date.")
+            return redirect(url_for('general_bp.get_attendance'))
+        if (end_date - start_date).days > 45:
+            flash("Date range cannot exceed 45 days.")
+            return redirect(url_for('general_bp.get_attendance'))
+        # Query attendance within range
+        attendance_records = Attendance.query.filter(
+            Attendance.date >= start_date,
+            Attendance.date <= end_date,
+            Attendance.session_code_id == session['session_code_id']
         ).all()
         if not attendance_records:
-            flash("No attendance records found for the specified date.")
+            flash("No attendance records found for the specified date range.")
             return redirect(url_for('general_bp.get_attendance'))
-        # Prepare CSV content
+        # Prepare CSV
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow([
@@ -131,11 +146,8 @@ def download_attendance_csv():
                 record.name, record.start_time, record.end_time, record.date,
                 record.roll_no, record.division, record.branch, record.reg_id
             ])
-        # Build filename with session and date
         session_id = session['session_code_id']
-        filename = f"attendance_records_{session_id}_{date}.csv"
-        # Return CSV as downloadable response
-        from flask import Response
+        filename = f"attendance_records_{session_id}_{start_date}_to_{end_date}.csv"
         return Response(
             output.getvalue(),
             mimetype='text/csv',

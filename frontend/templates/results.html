@@ -14,7 +14,6 @@
             <button type="submit">Logout</button>
         </form>
     </div>
-    </div>
     <script>
         function reloadPage() {
             location.reload();
@@ -41,11 +40,45 @@
                 <input type="text" id="division" name="division">
             </div>
             <div class="form-group">
-                <label for="date">Date :</label>
-                <input type="date" name="date" id="date">
+                <label for="start_date">Start Date:</label>
+                <input type="date" name="start_date" id="start_date" required>
+            </div>
+            <div class="form-group">
+                <label for="end_date">End Date:</label>
+                <input type="date" name="end_date" id="end_date" required>
             </div>
             <button type="submit">Submit</button>
         </form>
+        <script>
+            const form = document.querySelector("form[action='/Attendance_system/get_attendance']");
+            form.addEventListener("submit", function (e) {
+                const startInput = document.getElementById("start_date").value;
+                const endInput = document.getElementById("end_date").value;
+
+                if (!startInput || !endInput) {
+                    e.preventDefault();
+                    alert("Both start and end dates are required.");
+                    return;
+                }
+
+                const start = new Date(startInput);
+                const end = new Date(endInput);
+
+                if (start > end) {
+                    e.preventDefault();
+                    alert("Start date must be before or equal to end date.");
+                    return;
+                }
+
+                const diffInDays = (end - start) / (1000 * 60 * 60 * 24);
+                if (diffInDays > 45) {
+                    e.preventDefault();
+                    alert("The maximum allowed range is 45 days.");
+                }
+            });
+        </script>
+
+
     </div>
     <br>
     <br>
@@ -96,12 +129,16 @@
         </table>
         <br><br>
 
-
-        <!-- Modify the form in 'results.html' to include the date input -->
+        {% if request.args.get('start_date') and request.args.get('end_date') %}
         <form action="{{ url_for('admin_bp.download_attendance_csv') }}" method="post">
-            <input type="hidden" name="date" value="{{ request.args.get('date') }}">
+            <input type="hidden" name="start_date" value="{{ request.args.get('start_date') }}">
+            <input type="hidden" name="end_date" value="{{ request.args.get('end_date') }}">
             <button type="submit" class="btn btn-primary">Download CSV</button>
         </form>
+        {% else %}
+        <p style="color: red;"><strong>Note:</strong> Please perform a search with a valid date range before downloading CSV.</p>
+        {% endif %}
+
 
 
 

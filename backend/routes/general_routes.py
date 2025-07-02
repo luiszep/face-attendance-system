@@ -3,7 +3,7 @@ from flask import (
     url_for, flash, send_from_directory, session, current_app
 )
 from flask_login import login_required, current_user
-from sqlalchemy import asc
+from sqlalchemy import and_, asc
 
 from models import Attendance, Student_data, Users, db, SessionCode
 
@@ -109,17 +109,43 @@ def get_attendance():
                 ).order_by(asc(Attendance.reg_id)).all()
             # Query using filters from query string (e.g., ?reg_id=XYZ)
             elif query_parameters:
-                attendance_records = Attendance.query.filter_by(
-                    **query_parameters
+                filters = [Attendance.session_code_id == session['session_code_id']]
+
+                # Extract known filters
+                if 'name' in query_parameters:
+                    filters.append(Attendance.name.ilike(f"%{query_parameters['name']}%"))
+                if 'reg_id' in query_parameters:
+                    filters.append(Attendance.reg_id.ilike(f"%{query_parameters['reg_id']}%"))
+                if 'branch' in query_parameters:
+                    filters.append(Attendance.branch.ilike(f"%{query_parameters['branch']}%"))
+                if 'division' in query_parameters:
+                    filters.append(Attendance.division.ilike(f"%{query_parameters['division']}%"))
+
+                # Handle date range
+                start_date_str = query_parameters.get('start_date')
+                end_date_str = query_parameters.get('end_date')
+
+                if start_date_str and end_date_str:
+                    try:
+                        start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                        end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                        filters.append(Attendance.date.between(start_date, end_date))
+                    except ValueError:
+                        flash("Invalid date range format.", "error")
+                        attendance_records = []
+                        return render_template('results.html', attendance_records=attendance_records)
+
+                attendance_records = Attendance.query.filter(
+                    and_(*filters)
                 ).order_by(asc(Attendance.reg_id)).all()
-            # No filters provided
             else:
                 attendance_records = []
                 flash("No parameters provided for query", "warning")
             return render_template(
                 'results.html',
                 attendance_records=attendance_records,
-                date=date_filter
+                start_date=start_date_str,
+                end_date=end_date_str
             )
         except Exception as e:
             # Raw exception fallback
