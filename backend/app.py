@@ -15,6 +15,7 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.exceptions import NotFound
+from dotenv import load_dotenv  
 
 # --- Local modules ---
 from utils.helpers import (
@@ -33,16 +34,20 @@ ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))  # Root project directo
 TEMPLATE_DIR = os.path.join(ROOT_DIR, 'frontend', 'templates')  # HTML templates
 STATIC_DIR = os.path.join(ROOT_DIR, 'frontend', 'static')      # static assets
 
-# --- Load Configuration from JSON File ---
-with open('config.json') as config_file:
-    params = json.load(config_file)['params']
+# --- Load Environment Variables ---
+load_dotenv()  # loads from .env file
 
 # --- Flask App Initialization ---
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
-app.config['params'] = params
-app.config['SECRET_KEY'] = params['secret_key']
-app.config['SQLALCHEMY_DATABASE_URI'] = params['sql_url']
-app.config['UPLOAD_FOLDER'] = params['upload_folder']
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQL_URL')
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'uploads')
+app.config['ENCODING_DIR'] = os.environ.get('ENCODING_DIR', 'Resources')
+app.config['CAMERA_INDEX_1'] = int(os.environ.get('CAMERA_INDEX_1', 0))
+app.config['CAMERA_INDEX_2'] = int(os.environ.get('CAMERA_INDEX_2', 1))
+app.config['USE_SSL'] = os.environ.get('USE_SSL', 'false').lower() == 'true'
+app.config['CERT_PATH'] = os.environ.get('CERT_PATH', 'keys/cert.pem')
+app.config['KEY_PATH'] = os.environ.get('KEY_PATH', 'keys/key.pem')
 
 # --- Initialize Extensions ---
 db.init_app(app)
@@ -51,8 +56,8 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 # --- Certificate Paths for HTTPS ---
-cert_path = params['cert_path']
-key_path = params['key_path']
+cert_path = app.config['CERT_PATH']
+key_path = app.config['KEY_PATH']
 
 # --- Dispatcher Middleware (Mounting Flask App under "/Attendance_system") ---
 hostedapp = Flask(__name__)  # Container app to serve Flask under a subpath
@@ -95,7 +100,7 @@ def gen_frames(camera, session_code_id, duration=5):
         print("Session code missing. Cannot load encodings.")
         return
     # Get encoding directory from config
-    encoding_dir = app.config['params'].get('encoding_dir', 'Resources')
+    encoding_dir = app.config.get('ENCODING_DIR', 'Resources')
     encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_code_id}.p")
     if not os.path.exists(encoding_file_path):
         print(f"Encoding file not found: {encoding_file_path}")
@@ -186,9 +191,9 @@ def start_scan(camera_id):
     # --- Determine camera index from config ---
     try:
         if camera_id == 1:
-            cam_index = params['camera_index_1']
+            cam_index = app.config['CAMERA_INDEX_1']
         elif camera_id == 2:
-            cam_index = params['camera_index_2']
+            cam_index = app.config['CAMERA_INDEX_2']
         else:
             return "Invalid camera ID"
         # Open camera stream
@@ -217,7 +222,7 @@ def generate_encodings():
     if request.method == 'POST':
         session_id = session['session_code_id']
         # --- Build path to encoding file ---
-        encoding_dir = app.config['params'].get('encoding_dir', 'Resources')
+        encoding_dir = app.config.get('ENCODING_DIR', 'Resources')
         encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_id}.p")
         # --- Remove previous encoding file if it exists ---
         if os.path.exists(encoding_file_path):
@@ -268,8 +273,16 @@ if __name__ == '__main__':
     Uses HTTPS with specified certificate and key files.
     Hosts the mounted app (served under "/Attendance_system") on all network interfaces.
     """
-    hostedapp.run(
-        debug=True,
-        ssl_context=(cert_path, key_path),
-        host='0.0.0.0'
-    )
+    debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
+    if app.config['USE_SSL']:
+        hostedapp.run(
+            debug=debug_mode,
+            ssl_context=(app.config['CERT_PATH'], app.config['KEY_PATH']),
+            host='0.0.0.0'
+        )
+    else:
+        hostedapp.run(
+            debug=debug_mode,
+            host='0.0.0.0'
+        )
+
