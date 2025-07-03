@@ -26,6 +26,7 @@ from backend.utils.helpers import (
     record_attendance,
 )
 from backend.models import db, Student_data, Attendance, Users, SessionCode
+from backend.utils.s3_utils import load_encoding_from_s3, save_encoding_to_s3
 
 
 # --- App Directory Paths ---
@@ -98,16 +99,12 @@ def gen_frames(camera, session_code_id, duration=5):
     # --- Validate session and encoding file ---
     if not session_code_id:
         print("Session code missing. Cannot load encodings.")
+        return 
+    # --- Load known encodings and associated student IDs from S3 ---
+    encodeListKnownWithIds = load_encoding_from_s3(session_code_id)
+    if not encodeListKnownWithIds:
+        print(f"[S3] Encoding file not found for session: {session_code_id}")
         return
-    # Get encoding directory from config
-    encoding_dir = os.path.join(ROOT_DIR, app.config.get('ENCODING_DIR', 'Resources'))
-    encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_code_id}.p")
-    if not os.path.exists(encoding_file_path):
-        print(f"Encoding file not found: {encoding_file_path}")
-        return
-    # --- Load known encodings and associated student IDs ---
-    with open(encoding_file_path, 'rb') as file:
-        encodeListKnownWithIds = pickle.load(file)
     encodeListKnown, studentIds = encodeListKnownWithIds
     # --- Start streaming frames ---
     start_time = time.time()
@@ -221,14 +218,7 @@ def generate_encodings():
         return redirect(url_for('auth_bp.login'))
     if request.method == 'POST':
         session_id = session['session_code_id']
-        # --- Build path to encoding file ---
-        encoding_dir = os.path.join(ROOT_DIR, app.config.get('ENCODING_DIR', 'Resources'))
-        encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_id}.p")
-        # --- Remove previous encoding file if it exists ---
-        if os.path.exists(encoding_file_path):
-            os.remove(encoding_file_path)
-            print("Old encoding file removed.")
-            flash("Old encoding file removed.", "info")
+
         # --- Load student images from upload folder ---
         from backend.utils.s3_utils import list_files_in_folder
         s3_prefix = f"{app.config['UPLOAD_FOLDER']}/{session_id}"
@@ -250,10 +240,13 @@ def generate_encodings():
             flash("Encoding started...", "success")
             encode_list_known = findEncodings(img_list)
             encode_list_with_ids = [encode_list_known, student_ids]
-            with open(encoding_file_path, 'wb') as file:
-                pickle.dump(encode_list_with_ids, file)
-            print("[INFO] Encoding complete. File saved.")
-            flash("Encodings generated successfully!", "success")
+            success = save_encoding_to_s3(session_id, encode_list_with_ids)
+            if success:
+                print("[S3] Encoding complete. File saved to S3.")
+                flash("Encodings generated successfully!", "success")
+            else:
+                print("[S3 ERROR] Failed to save encoding to S3.")
+                flash("Failed to save encoding to cloud.", "error")
         except Exception as e:
             print(f"[ERROR] Encoding failed: {e}")
             flash("Error occurred while generating encodings.", "error")

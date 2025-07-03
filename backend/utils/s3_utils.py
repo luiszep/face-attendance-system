@@ -89,3 +89,54 @@ def generate_presigned_url(s3_key, expiration=3600):
     except Exception as e:
         print("Presigned URL error:", e)
         return None
+
+def save_encoding_to_s3(session_id, data, prefix="encodings"):
+    """
+    Saves a Python object (e.g., encodings) as a .p file in S3.
+    
+    Args:
+        session_id (int or str): The session ID used in the filename.
+        data (object): The Python object to pickle and upload.
+        prefix (str): Folder/prefix in S3 (default is 'encodings').
+
+    Returns:
+        bool: True if successful, False if failed.
+    """
+    try:
+        import pickle
+        from io import BytesIO
+
+        buffer = BytesIO()
+        pickle.dump(data, buffer)
+        buffer.seek(0)
+
+        s3_key = f"{prefix}/EncodeFile_{session_id}.p"
+        s3.upload_fileobj(buffer, AWS_S3_BUCKET_NAME, s3_key)
+        return True
+    except Exception as e:
+        print(f"[S3 Error] Failed to save encoding to S3: {e}")
+        return False
+
+def load_encoding_from_s3(session_id, prefix="encodings"):
+    """
+    Loads a .p file from S3 and returns the unpickled Python object.
+
+    Args:
+        session_id (int or str): The session ID used in the filename.
+        prefix (str): Folder/prefix in S3 (default is 'encodings').
+
+    Returns:
+        object or None: The unpickled object, or None if failed.
+    """
+    try:
+        import pickle
+        from io import BytesIO
+
+        s3_key = f"{prefix}/EncodeFile_{session_id}.p"
+        response = s3.get_object(Bucket=AWS_S3_BUCKET_NAME, Key=s3_key)
+        buffer = BytesIO(response['Body'].read())
+        data = pickle.load(buffer)
+        return data
+    except Exception as e:
+        print(f"[S3 Error] Failed to load encoding from S3: {e}")
+        return None
