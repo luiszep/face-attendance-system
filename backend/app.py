@@ -230,14 +230,20 @@ def generate_encodings():
             print("Old encoding file removed.")
             flash("Old encoding file removed.", "info")
         # --- Load student images from upload folder ---
-        upload_base = os.path.join(ROOT_DIR, app.config['UPLOAD_FOLDER'])
-        folder_path = os.path.join(upload_base, str(session_id))
-        path_list = os.listdir(folder_path)
+        from backend.utils.s3_utils import list_files_in_folder
+        s3_prefix = f"{app.config['UPLOAD_FOLDER']}/{session_id}"
+        path_list = list_files_in_folder(s3_prefix)
         img_list, student_ids = [], []
         for path in path_list:
-            img_list.append(cv2.imread(os.path.join(folder_path, path)))
-            student_ids.append(os.path.splitext(path)[0])
-            print(f"[INFO] Found image for student ID: {student_ids[-1]}")
+            from backend.utils.s3_utils import load_image_from_s3
+            s3_key = f"{app.config['UPLOAD_FOLDER']}/{session_id}/{path}"
+            img = load_image_from_s3(s3_key)
+            if img is not None:
+                img_list.append(img)
+                student_ids.append(os.path.splitext(path)[0])
+                print(f"[INFO] Found image for student ID: {student_ids[-1]}")
+            else:
+                print(f"[WARNING] Could not load image: {s3_key}")
         # --- Generate and save encodings ---
         try:
             print("[INFO] Encoding started...")

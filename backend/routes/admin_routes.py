@@ -32,7 +32,7 @@ def add_user():
     Handle admin submission of a new student.
     - Validates session and form fields
     - Checks for duplicate student within session
-    - Saves uploaded image into session-specific folder
+    - Saves uploaded image into session-specific S3 folder
     - Commits new student record to the database
     """
     # Ensure a session code is present
@@ -45,7 +45,7 @@ def add_user():
     division = request.form['division']
     regid = request.form['reg_id']
     rollno = request.form['roll_no']
-    # Check if a student with the same name already exists for this session
+    # Check for duplicate
     existing_student = Student_data.query.filter_by(
         name=name,
         session_code_id=session['session_code_id']
@@ -53,47 +53,41 @@ def add_user():
     if existing_student:
         flash('Student already exists!', 'error')
         return redirect(url_for('admin_bp.data'))
-    # Ensure an image was submitted
+    # Validate image
     if 'image' not in request.files:
         flash('No file part', 'error')
         return redirect(request.url)
     file = request.files['image']
-    # Ensure a file was selected
     if file.filename == '':
         flash('No selected file', 'error')
         return redirect(request.url)
-    # Validate and save the image file
     if file and allowed_file(file.filename):
-        # Build session-specific upload folder
-        session_folder = os.path.abspath(
-            os.path.join(
-                current_app.root_path, '..',
-                current_app.config['UPLOAD_FOLDER'],
-                str(session['session_code_id'])
-            )
-        )
-        os.makedirs(session_folder, exist_ok=True)
-        # Construct secure filename using reg ID
+        from backend.utils.s3_utils import upload_file_to_s3
+        # Construct secure filename
         extension = file.filename.rsplit('.', 1)[1].lower()
         filename = secure_filename(f"{regid}.{extension}")
-        file_path = os.path.join(session_folder, filename)
-        print(f"[DEBUG] Upload folder: {session_folder}")
-        print(f"[DEBUG] Saving image as: {file_path}")
-        file.save(file_path)
-        # Create and commit new student record
+        # S3 path: uploads/<session_id>/<filename>
+        session_id = session['session_code_id']
+        s3_key = upload_file_to_s3(file, folder=f"{current_app.config['UPLOAD_FOLDER']}/{session_id}")
+
+        if s3_key:
+            print(f"[DEBUG] Uploaded to S3: {s3_key}")
+        else:
+            flash("Failed to upload image to cloud storage", "error")
+            return redirect(request.url)
+        # Create DB record
         user = Student_data(
             name=name,
             rollno=rollno,
             division=division,
             branch=branch,
             regid=regid,
-            session_code_id=session['session_code_id']
+            session_code_id=session_id
         )
         db.session.add(user)
         db.session.commit()
         flash('Student added successfully!', 'success')
         return render_template('data.html', error='Student added successfully!')
-    # If file extension is invalid
     flash('Invalid file extension. Allowed extensions are: png, jpg, jpeg, gif', 'error')
     return redirect(request.url)
 

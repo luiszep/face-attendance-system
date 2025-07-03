@@ -152,39 +152,40 @@ def get_attendance():
             return str(e)
     return 'Unauthorized access'
 
-
 # -- Admin Image Gallery Route --
-@general_bp.route('/images')
+@general_bp.route('/images') 
 @login_required
 def images():
     """
     Allow admin to view all uploaded images for the current session.
-    - Lists image filenames in session-specific upload folder
+    - Lists image filenames in session-specific upload folder (S3)
+    - Generates presigned URLs for each image
     - Renders image_gallery.html with image count and list
     """
-    # Ensure session is valid
     if 'session_code_id' not in session:
         flash('Session expired or unauthorized access.', 'error')
         return redirect(url_for('auth_bp.login'))
     if current_user.role == 'admin':
-        session_folder = os.path.abspath(
-            os.path.join(
-                current_app.root_path, '..',
-                current_app.config['UPLOAD_FOLDER'],
-                str(session['session_code_id'])
-            )
-        )
-        image_files = []
-        if os.path.exists(session_folder):
-            image_files = [
-                f for f in os.listdir(session_folder)
-                if os.path.isfile(os.path.join(session_folder, f))
-            ]
-        image_no = len(image_files)
+        from backend.utils.s3_utils import list_files_in_folder, generate_presigned_url
+        # Build S3 prefix based on session ID
+        session_id = str(session['session_code_id'])
+        s3_prefix = f"{current_app.config['UPLOAD_FOLDER']}/{session_id}"
+        # List files in S3 "folder"
+        image_keys = list_files_in_folder(s3_prefix)
+        image_no = len(image_keys)
         print(f"No of images: {image_no}")
+        # Generate presigned URLs
+        images = []
+        for filename in image_keys:
+            full_key = f"{s3_prefix}/{filename}"  # ← now it becomes: uploads/1/FLUFFY1.jpg
+            url = generate_presigned_url(full_key)
+            images.append({
+                'filename': filename,
+                'url': url
+            })
         return render_template(
             'image_gallery.html',
-            image_files=image_files,
+            images=images,
             image_no=image_no
         )
     return 'Unauthorized access'
@@ -196,9 +197,14 @@ def get_image(folder, filename):
     """
     Serve an uploaded image file if the folder matches the current session_code_id.
     - Prevents access to folders outside the active session
-    - Sends file from session-specific upload directory
+    - Returns a presigned S3 URL that temporarily grants access
     """
     if str(folder) != str(session['session_code_id']):
         return "Unauthorized access", 403
-    folder_path = os.path.abspath(os.path.join(current_app.root_path, '..', current_app.config['UPLOAD_FOLDER'], folder))
-    return send_from_directory(folder_path, filename)
+    from backend.utils.s3_utils import generate_presigned_url
+    s3_key = f"{current_app.config['UPLOAD_FOLDER']}/{folder}/{filename}"
+    url = generate_presigned_url(s3_key)
+    if url:
+        return redirect(url)
+    else:
+        return "File not found", 404

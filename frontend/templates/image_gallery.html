@@ -32,12 +32,12 @@
     <div class="container">
         <h1 class="mt-5 mb-4">Image Gallery</h1>
         <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for image_file in image_files %}
+            {% for image in images %}
             <div class="col">
                 <div class="card h-100">
-                    <img src="{{ url_for('general_bp.get_image', folder=session['session_code_id'], filename=image_file) }}" class="card-img-top" alt="{{ image_file }}">
+                    <img src="{{ image.url }}" class="card-img-top" alt="{{ image.filename }}">
                     <div class="card-body">
-                        <h5 class="card-title">{{ image_file }}</h5>
+                        <h5 class="card-title">{{ image.filename }}</h5>
                     </div>
                 </div>
             </div>
