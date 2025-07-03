@@ -2,8 +2,8 @@ from flask import Blueprint, request, redirect, url_for, render_template, flash,
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
-from models import db, Student_data, Attendance, SessionCode
-from utils.helpers import allowed_file
+from backend.models import db, Student_data, Attendance, SessionCode
+from backend.utils.helpers import allowed_file
 
 import os
 import csv
@@ -65,15 +65,20 @@ def add_user():
     # Validate and save the image file
     if file and allowed_file(file.filename):
         # Build session-specific upload folder
-        session_folder = os.path.join(
-            current_app.config['UPLOAD_FOLDER'],
-            str(session['session_code_id'])
+        session_folder = os.path.abspath(
+            os.path.join(
+                current_app.root_path, '..',
+                current_app.config['UPLOAD_FOLDER'],
+                str(session['session_code_id'])
+            )
         )
         os.makedirs(session_folder, exist_ok=True)
         # Construct secure filename using reg ID
         extension = file.filename.rsplit('.', 1)[1].lower()
         filename = secure_filename(f"{regid}.{extension}")
         file_path = os.path.join(session_folder, filename)
+        print(f"[DEBUG] Upload folder: {session_folder}")
+        print(f"[DEBUG] Saving image as: {file_path}")
         file.save(file_path)
         # Create and commit new student record
         user = Student_data(

@@ -30,7 +30,7 @@ class Student_data(db.Model):
     division = db.Column(db.String(80), nullable=False)
     branch = db.Column(db.String(80), nullable=False)
     regid = db.Column(db.String(80), unique=True, nullable=False)
-    session_code_id = db.Column(db.Integer, db.ForeignKey('session_code.id'), nullable=False)
+    session_code_id = db.Column(db.Integer, nullable=False)
 
 
 # -------------------------------
@@ -63,7 +63,7 @@ class Attendance(db.Model):
     division = db.Column(db.String(10))
     branch = db.Column(db.String(100))
     reg_id = db.Column(db.String(100))
-    session_code_id = db.Column(db.Integer, db.ForeignKey('session_code.id'), nullable=False)
+    session_code_id = db.Column(db.Integer, nullable=False)
 
     # Ensures that a student can have only one record per date
     __table_args__ = (
@@ -93,7 +93,7 @@ class Users(db.Model, UserMixin):
     password = db.Column(db.String(100), nullable=False)
     reg_id = db.Column(db.String(20), nullable=False)
     role = db.Column(db.String(20))
-    session_code_id = db.Column(db.Integer, db.ForeignKey('session_code.id'), nullable=False)
+    session_code_id = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
         return f'<User: {self.username}, Role: {self.role}>'

@@ -79,7 +79,8 @@ def mysqlconnect(student_id, session_code_id):
         tuple: (id, name, rollno, division, branch) if found,
                otherwise (None, None, None, None, None).
     """
-    from app import Student_data, app  # Local import to avoid circular dependency
+    from backend.app import app
+    from backend.models import Student_data
     if student_id is None:
         return None, None, None, None, None
     try:
@@ -115,7 +116,8 @@ def record_attendance(name, current_date, roll_no, div, branch, reg_id, session_
         reg_id (str): Unique registration ID of the student.
         session_code_id (int): ID of the active session code.
     """
-    from app import db, Attendance, app  # Local import to prevent circular dependencies
+    from backend.app import app
+    from backend.models import db, Attendance
     try:
         with app.app_context():
             # Check if an attendance entry already exists for this student on this date/session

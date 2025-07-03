@@ -18,14 +18,14 @@ from werkzeug.exceptions import NotFound
 from dotenv import load_dotenv  
 
 # --- Local modules ---
-from utils.helpers import (
+from backend.utils.helpers import (
     findEncodings,
     compare,
     get_data,
     mysqlconnect,
     record_attendance,
 )
-from models import db, Student_data, Attendance, Users, SessionCode
+from backend.models import db, Student_data, Attendance, Users, SessionCode
 
 
 # --- App Directory Paths ---
@@ -40,7 +40,7 @@ load_dotenv()  # loads from .env file
 # --- Flask App Initialization ---
 app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQL_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'uploads')
 app.config['ENCODING_DIR'] = os.environ.get('ENCODING_DIR', 'Resources')
 app.config['CAMERA_INDEX_1'] = int(os.environ.get('CAMERA_INDEX_1', 0))
@@ -66,9 +66,9 @@ hostedapp.wsgi_app = DispatcherMiddleware(NotFound(), {
 })
 
 # --- Blueprint Registration ---
-from routes.auth_routes import auth_bp
-from routes.general_routes import general_bp
-from routes.admin_routes import admin_bp
+from backend.routes.auth_routes import auth_bp
+from backend.routes.general_routes import general_bp
+from backend.routes.admin_routes import admin_bp
 
 # Register app routes
 app.register_blueprint(auth_bp)
@@ -100,7 +100,7 @@ def gen_frames(camera, session_code_id, duration=5):
         print("Session code missing. Cannot load encodings.")
         return
     # Get encoding directory from config
-    encoding_dir = app.config.get('ENCODING_DIR', 'Resources')
+    encoding_dir = os.path.join(ROOT_DIR, app.config.get('ENCODING_DIR', 'Resources'))
     encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_code_id}.p")
     if not os.path.exists(encoding_file_path):
         print(f"Encoding file not found: {encoding_file_path}")
@@ -222,7 +222,7 @@ def generate_encodings():
     if request.method == 'POST':
         session_id = session['session_code_id']
         # --- Build path to encoding file ---
-        encoding_dir = app.config.get('ENCODING_DIR', 'Resources')
+        encoding_dir = os.path.join(ROOT_DIR, app.config.get('ENCODING_DIR', 'Resources'))
         encoding_file_path = os.path.join(encoding_dir, f"EncodeFile_{session_id}.p")
         # --- Remove previous encoding file if it exists ---
         if os.path.exists(encoding_file_path):
@@ -230,7 +230,8 @@ def generate_encodings():
             print("Old encoding file removed.")
             flash("Old encoding file removed.", "info")
         # --- Load student images from upload folder ---
-        folder_path = os.path.join('uploads', str(session_id))
+        upload_base = os.path.join(ROOT_DIR, app.config['UPLOAD_FOLDER'])
+        folder_path = os.path.join(upload_base, str(session_id))
         path_list = os.listdir(folder_path)
         img_list, student_ids = [], []
         for path in path_list:
@@ -270,19 +271,12 @@ def index():
 if __name__ == '__main__':
     """
     Entry point for launching the app in development mode.
-    Uses HTTPS with specified certificate and key files.
-    Hosts the mounted app (served under "/Attendance_system") on all network interfaces.
+    Uses HTTP (no SSL). Hosts the mounted app on all network interfaces.
     """
     debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
-    if app.config['USE_SSL']:
-        hostedapp.run(
-            debug=debug_mode,
-            ssl_context=(app.config['CERT_PATH'], app.config['KEY_PATH']),
-            host='0.0.0.0'
-        )
-    else:
-        hostedapp.run(
-            debug=debug_mode,
-            host='0.0.0.0'
-        )
+    hostedapp.run(
+        debug=debug_mode,
+        host='0.0.0.0'
+    )
+
 

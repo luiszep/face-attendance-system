@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import re
 
 # --- Internal modules ---
-from models import db, Users, SessionCode
+from backend.models import db, Users, SessionCode
 
 # --- Initialize Bcrypt ---
 bcrypt = Bcrypt()

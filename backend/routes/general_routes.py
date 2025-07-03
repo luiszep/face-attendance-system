@@ -5,7 +5,7 @@ from flask import (
 from flask_login import login_required, current_user
 from sqlalchemy import and_, asc
 
-from models import Attendance, Student_data, Users, db, SessionCode
+from backend.models import Attendance, Student_data, Users, db, SessionCode
 
 import os
 import datetime
@@ -167,9 +167,12 @@ def images():
         flash('Session expired or unauthorized access.', 'error')
         return redirect(url_for('auth_bp.login'))
     if current_user.role == 'admin':
-        session_folder = os.path.join(
-            current_app.config['UPLOAD_FOLDER'],
-            str(session['session_code_id'])
+        session_folder = os.path.abspath(
+            os.path.join(
+                current_app.root_path, '..',
+                current_app.config['UPLOAD_FOLDER'],
+                str(session['session_code_id'])
+            )
         )
         image_files = []
         if os.path.exists(session_folder):
@@ -197,5 +200,5 @@ def get_image(folder, filename):
     """
     if str(folder) != str(session['session_code_id']):
         return "Unauthorized access", 403
-    folder_path = os.path.join(current_app.config['UPLOAD_FOLDER'], folder)
+    folder_path = os.path.abspath(os.path.join(current_app.root_path, '..', current_app.config['UPLOAD_FOLDER'], folder))
     return send_from_directory(folder_path, filename)
