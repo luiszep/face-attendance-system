@@ -2,61 +2,42 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Gallery</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .image-name {
-            margin-top: 5px;
-        }
-
-        button {
-            padding: 10px 20px;
-            background-color: #d65252;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #0bd53d;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Gallery</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-    <div class="container">
-        <h1 class="mt-5 mb-4">Image Gallery</h1>
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for image in images %}
-            <div class="col">
-                <div class="card h-100">
-                    <img src="{{ image.url }}" class="card-img-top" alt="{{ image.filename }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ image.filename }}</h5>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 via-gray-900 to-indigo-900 text-white p-4">
+
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-center text-white">Image Gallery</h1>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+      {% for image in images %}
+      <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg overflow-hidden shadow-md p-4">
+        <img src="{{ image.url }}" alt="{{ image.filename }}" class="rounded-md w-full object-cover max-h-80">
+        <p class="mt-2 text-center text-sm font-semibold text-blue-200">{{ image.filename }}</p>
+      </div>
+      {% endfor %}
     </div>
-    <div>
-        <h2>No of images are: {{image_no}}</h2>
+
+    <div class="text-center text-blue-300 text-lg font-medium mb-6">
+      No of images are: <span class="font-bold text-white">{{ image_no }}</span>
     </div>
+
+    <div class="flex justify-center gap-4">
+      <form action="{{ url_for('generate_encodings') }}" method="post">
+        <button type="submit"
+          class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-md transition">Generate</button>
+      </form>
+      <form action="{{ url_for('admin_bp.data') }}">
+        <button type="submit"
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md transition">Back</button>
+      </form>
     </div>
-    <form action="{{url_for('generate_encodings')}}" method="post">
-        <button type="submit">Generate</button>
-    </form>
-    <form action="{{url_for('admin_bp.data')}}">
-        <button type="submit">Back</button>
-    </form>
-    </div>
-    <!-- Bootstrap JS (optional if you want to use Bootstrap components that require JS) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  </div>
+
 </body>
 
 </html>

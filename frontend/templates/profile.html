@@ -2,65 +2,73 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-    <div class="container">
-        <!-- Profile Section -->
-        <div class="profile-section">
-            <h2>Profile</h2>
-            <p><strong>Username:</strong> {{ current_user.username }}</p>
-            <p><strong>Role:</strong> {{ current_user.role }}</p>
-            <p><strong>RegID:</strong> {{ current_user.reg_id }}</p>
-            <p><strong>Total no of attendance:</strong> {{ no_of_attendance }}</p>
-            <!-- Add more user information here as needed -->
-        </div>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 via-gray-900 to-indigo-900 text-white p-6">
+  <div class="max-w-5xl mx-auto space-y-8">
 
-        <!-- Table Section -->
-        <div class="table-section">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Date</th>
-                        <th>Roll No</th>
-                        <th>Division</th>
-                        <th>Branch</th>
-                        <th>Registration No</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in data %}
-                    <tr>
-                        <td><b>{{ record.name }}</b></td>
-                        <td><b>{{ record.start_time }}</b></td>
-                        <td><b>{{ record.end_time }}</b></td>
-                        <td><b>{{ record.date }}</b></td>
-                        <td><b>{{ record.roll_no }}</b></td>
-                        <td><b>{{ record.division }}</b></td>
-                        <td><b>{{ record.branch }}</b></td>
-                        <td><b>{{ record.reg_id }}</b></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <!-- Profile Card -->
+    <div class="bg-white bg-opacity-10 backdrop-blur-md p-6 rounded-lg shadow-md text-center">
+      <h2 class="text-2xl font-bold text-blue-300 mb-4">Profile</h2>
+      <p><span class="font-semibold text-blue-400">Username:</span> {{ current_user.username }}</p>
+      <p><span class="font-semibold text-blue-400">Role:</span> {{ current_user.role }}</p>
+      <p><span class="font-semibold text-blue-400">RegID:</span> {{ current_user.reg_id }}</p>
+      <p><span class="font-semibold text-blue-400">Total no of attendance:</span> {{ no_of_attendance }}</p>
     </div>
+
+    <!-- Attendance Table -->
+    <div class="bg-white bg-opacity-10 backdrop-blur-md p-4 rounded-lg shadow">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm text-white">
+          <thead class="text-blue-200 uppercase border-b border-blue-500">
+            <tr>
+              <th class="px-4 py-3">Name</th>
+              <th class="px-4 py-3">Start Time</th>
+              <th class="px-4 py-3">End Time</th>
+              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3">Roll No</th>
+              <th class="px-4 py-3">Division</th>
+              <th class="px-4 py-3">Branch</th>
+              <th class="px-4 py-3">Registration No</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in data %}
+            <tr class="border-b border-blue-700 hover:bg-white hover:bg-opacity-10">
+              <td class="px-4 py-3 font-semibold">{{ record.name }}</td>
+              <td class="px-4 py-3">{{ record.start_time }}</td>
+              <td class="px-4 py-3">{{ record.end_time }}</td>
+              <td class="px-4 py-3">{{ record.date }}</td>
+              <td class="px-4 py-3">{{ record.roll_no }}</td>
+              <td class="px-4 py-3">{{ record.division }}</td>
+              <td class="px-4 py-3">{{ record.branch }}</td>
+              <td class="px-4 py-3">{{ record.reg_id }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Back Button -->
     <form action="{{ url_for('general_bp.display_attendance') }}">
-        <button type="submit">Back</button>
+      <button type="submit"
+        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-semibold shadow transition">
+        Back
+      </button>
     </form>
-</body>
-{% if error %}
-<script>
-    // Display an alert with the error message
+
+  </div>
+
+  {% if error %}
+  <script>
     alert("{{ error|safe }}");
-</script>
-{% endif %}
+  </script>
+  {% endif %}
+</body>
 
 </html>

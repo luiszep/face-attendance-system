@@ -1,6 +1,6 @@
 # --- Flask core imports and extensions ---
-from flask import Blueprint, render_template, request, session, flash
-from flask_login import login_user, logout_user
+from flask import Blueprint, render_template, request, session, flash, redirect, url_for
+from flask_login import login_user, logout_user, login_required
 from flask_bcrypt import Bcrypt
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -65,7 +65,7 @@ def register():
             db.session.add(new_user)
             db.session.commit()
             flash('Registration successful!', 'success')
-            return render_template('login.html', error='Registration successful!')
+            return redirect(url_for('auth_bp.login'))
     # --- Render form with error (if any) ---
     return render_template('register.html', error=error)
 
@@ -76,6 +76,7 @@ def login():
     Handles user login by validating credentials and session code,
     then redirecting the user based on their role.
     """
+    error_message = None
     if request.method == 'GET':
         return render_template('login.html')
     elif request.method == 'POST':
@@ -88,7 +89,7 @@ def login():
         if not session_code_obj:
             error_message = 'Invalid session code. Please check and try again.'
             flash(error_message, 'error')
-            return render_template('login.html', error=error_message)
+            return redirect(url_for('auth_bp.login', error=error_message))
         try:
             # --- Fetch user by username and session_code_id ---
             user = Users.query.filter_by(username=username, session_code_id=session_code_obj.id).first()
@@ -103,11 +104,11 @@ def login():
                 flash(success_message, 'success')
                 # --- Role-based redirection ---
                 if user.role == 'admin':
-                    return render_template('data.html', error=success_message)
+                    return redirect(url_for('admin_bp.data'))
                 elif user.role == 'teacher':
-                    return render_template('results.html', error=success_message)
+                    return redirect(url_for('general_bp.get_attendance'))
                 elif user.role == 'student':
-                    return render_template('display_data.html', error=success_message)
+                    return redirect(url_for('general_bp.display_attendance'))
             else:
                 error_message = 'Incorrect username or password. Please try again.'
                 flash(error_message, 'error')
@@ -116,10 +117,11 @@ def login():
             flash(error_message, 'error')
             print(f'[EXCEPTION] {e}')
     # --- Final fallback ---
-    return render_template('login.html', error=error_message)
+    return redirect(url_for('auth_bp.login', error=error_message)) if error_message else redirect(url_for('auth_bp.login'))
 
 # --- Logout Blueprint ---
-@auth_bp.route('/logout', methods=['GET', 'POST'])
+@auth_bp.route('/logout', methods=['POST'])
+@login_required
 def logout():
     """
     Logs out the current user, clears the session,
@@ -128,4 +130,4 @@ def logout():
     logout_user()
     session.clear()
     flash('Logout successful!', 'success')
-    return render_template('login.html', error='Logout successful!')
+    return redirect(url_for('auth_bp.login'))

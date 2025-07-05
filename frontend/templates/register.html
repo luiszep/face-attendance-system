@@ -2,58 +2,74 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>Register Page</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body> 
+<body class="min-h-screen bg-gradient-to-br from-blue-900 via-gray-900 to-indigo-900 flex items-center justify-center p-4">
 
-    <div class="login_form">
-        <h1>Register Page</h1> 
-       <form method="POST" action="/Attendance_system/register">
-            <div class="form-group">
-                <label for="username">Username: </label>
-                <input type="text" name="username" id="username"><br><br>
-            </div>
-            <div class="form-group">
-                <label for="reg_id">Registeration ID: </label>
-                <input type="text" name="reg_id" , id="reg_id"><br><br>
-            </div>
-            <div class="form-group">
-                <label for="password">Password: </label>
-                <input type="password" name="password" id="password" required title="Password must contain at least one uppercase letter, one symbol, one number, and be at least 8 characters long!"><br><br>
-            </div>
-            <div class="form-group">
-                <label for="role">Role: </label>
-                <select name="role" id="role">
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
+  <div class="bg-white bg-opacity-10 backdrop-blur-md p-8 rounded-xl shadow-2xl w-full max-w-md text-white">
+    <h1 class="text-2xl font-bold text-center text-blue-200 mb-6">Register</h1>
 
-            <div class="form-group">
-                <label for="session_code">Session Code: </label>
-                <input type="text" name="session_code" id="session_code" required><br><br>
-            </div>
+    <form method="POST" action="/Attendance_system/register" class="space-y-4">
+      <div>
+        <label for="username" class="block text-sm font-medium mb-1">Username:</label>
+        <input type="text" name="username" id="username"
+          class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+      </div>
 
-            <button type="submit">Submit</button><br><br>
-        </form>
-        <a href="{{'login'}}">Already have a account! Login here</a>
+      <div>
+        <label for="reg_id" class="block text-sm font-medium mb-1">Registration ID:</label>
+        <input type="text" name="reg_id" id="reg_id"
+          class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium mb-1">Password:</label>
+        <input type="password" name="password" id="password"
+          class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+          title="Password must contain at least one uppercase letter, one symbol, one number, and be at least 8 characters long!" />
+      </div>
+
+      <div>
+        <label for="role" class="block text-sm font-medium mb-1">Role:</label>
+        <select name="role" id="role"
+          class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="session_code" class="block text-sm font-medium mb-1">Session Code:</label>
+        <input type="text" name="session_code" id="session_code"
+          class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+      </div>
+
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition-all duration-200">
+        Submit
+      </button>
+    </form>
+
+    <div class="mt-6 text-center text-sm text-blue-200">
+      <a href="{{ 'login' }}" class="underline hover:text-blue-100">
+        Already have an account? Login here
+      </a>
     </div>
-    
-        function reloadPage() {
-            location.reload();
-        }
-    </script>
+
     {% if error %}
     <script>
-        // Display an alert with the error message
+      document.addEventListener("DOMContentLoaded", function () {
         alert("{{ error|safe }}");
+      });
     </script>
-{% endif %}
+    {% endif %}
+  </div>
 </body>
 
 </html>

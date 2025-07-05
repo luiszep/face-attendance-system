@@ -4,14 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <title>Attendance Query Interface</title>
 </head>
 
-<body>
+<body class="min-h-screen bg-gradient-to-br from-blue-900 via-gray-900 to-indigo-900 text-white p-4">
     <div class="button-group">
         <form action="{{ url_for('auth_bp.logout') }}" method="post" class="logoutForm">
-            <button type="submit">Logout</button>
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-semibold shadow">
+            Logout
+            </button>
         </form>
     </div>
     <script>
@@ -19,137 +22,180 @@
             location.reload();
         }
     </script>
-    <div class="query">
-        <h1>Attendance Query</h1>
-        <p>Enter any filter below (Name, Reg ID, etc.) — or leave them blank and select only a date to see all students on that day.</p>
-        <form action="/Attendance_system/get_attendance" method="GET" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name">
-            </div>
-            <div class="form-group">
-                <label for="register id">Register Id:</label>
-                <input type="text" id="reg_id" name="reg_id">
-            </div>
-            <div class="form-group">
-                <label for="branch">Branch:</label>
-                <input type="text" id="branch" name="branch">
-            </div>
-            <div class="form-group">
-                <label for="division">Division:</label>
-                <input type="text" id="division" name="division">
-            </div>
-            <div class="form-group">
-                <label for="start_date">Start Date:</label>
-                <input type="date" name="start_date" id="start_date" required>
-            </div>
-            <div class="form-group">
-                <label for="end_date">End Date:</label>
-                <input type="date" name="end_date" id="end_date" required>
-            </div>
-            <button type="submit">Submit</button>
-        </form>
-        <script>
-            const form = document.querySelector("form[action='/Attendance_system/get_attendance']");
-            form.addEventListener("submit", function (e) {
-                const startInput = document.getElementById("start_date").value;
-                const endInput = document.getElementById("end_date").value;
+    <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-xl shadow-xl p-6 max-w-2xl mx-auto mb-10 fade-in">
+        <div class="query">
+            <h1 class="text-2xl font-bold mb-2">Attendance Query</h1>
+            <p class="text-sm text-blue-200 mb-4">Enter any filter below (Name, Reg ID, etc.) — or leave them blank and select only a date to see all students on that day.</p>
+            <form action="{{ url_for('general_bp.get_attendance') }}" method="GET" enctype="multipart/form-data" class="attendanceForm">
+                <div class="mb-4">
+                    <label for="name" class="block text-sm font-medium mb-1">Name:</label>
+                    <input type="text" id="name" name="name"
+                        class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div class="mb-4">
+                    <label for="register id" class="block text-sm font-medium mb-1">Register Id:</label>
+                    <input type="text" id="reg_id" name="reg_id"
+                        class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div class="mb-4">
+                    <label for="branch" class="block text-sm font-medium mb-1">Branch:</label>
+                    <input type="text" id="branch" name="branch"
+                        class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div class="mb-4">
+                    <label for="division" class="block text-sm font-medium mb-1">Division:</label>
+                    <input type="text" id="division" name="division"
+                        class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div class="mb-4">
+                    <label for="start_date" class="block text-sm font-medium mb-1">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date"
+                        class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+                </div>
+                <div class="mb-4">
+                    <label for="end_date" class="block text-sm font-medium mb-1">End Date:</label>
+                    <input type="date" id="end_date" name="end_date"
+                        class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" required/>
+                </div>
+                <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-semibold transition-all">
+                Submit
+                </button>
+            </form>
+            <script>
+                const form = document.querySelector("form.attendanceForm");
+                form.addEventListener("submit", function (e) {
+                    const startInput = document.getElementById("start_date").value;
+                    const endInput = document.getElementById("end_date").value;
 
-                if (!startInput || !endInput) {
-                    e.preventDefault();
-                    alert("Both start and end dates are required.");
-                    return;
-                }
+                    if (!startInput || !endInput) {
+                        e.preventDefault();
+                        alert("Both start and end dates are required.");
+                        return;
+                    }
 
-                const start = new Date(startInput);
-                const end = new Date(endInput);
+                    const start = new Date(startInput);
+                    const end = new Date(endInput);
 
-                if (start > end) {
-                    e.preventDefault();
-                    alert("Start date must be before or equal to end date.");
-                    return;
-                }
+                    if (start > end) {
+                        e.preventDefault();
+                        alert("Start date must be before or equal to end date.");
+                        return;
+                    }
 
-                const diffInDays = (end - start) / (1000 * 60 * 60 * 24);
-                if (diffInDays > 45) {
-                    e.preventDefault();
-                    alert("The maximum allowed range is 45 days.");
-                }
-            });
-        </script>
-
-
-    </div>
-    <br>
-    <br>
-
-    <div class="result">
-        <div class="heading">
-            <h1>Results</h1>
-            <h1>Attendance Results</h1>
-            <p><strong>Total records: {{ attendance_records|length }}</strong></p>
+                    const diffInDays = (end - start) / (1000 * 60 * 60 * 24);
+                    if (diffInDays > 45) {
+                        e.preventDefault();
+                        alert("The maximum allowed range is 45 days.");
+                    }
+                });
+            </script>
         </div>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li style="color:black;">{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% endwith %}
-        {% block content %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Date</th>
-                    <th>Roll Number</th>
-                    <th>Division</th>
-                    <th>Branch</th>
-                    <th>Registration ID</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in attendance_records %}
-                <tr>
-                    <td>{{ record.name }}</td>
-                    <td>{{ record.start_time }}</td>
-                    <td>{{ record.end_time }}</td>
-                    <td>{{ record.date }}</td>
-                    <td>{{ record.roll_no }}</td>
-                    <td>{{ record.division }}</td>
-                    <td>{{ record.branch }}</td>
-                    <td>{{ record.reg_id }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <br><br>
-
-        {% if request.args.get('start_date') and request.args.get('end_date') %}
-        <form action="{{ url_for('admin_bp.download_attendance_csv') }}" method="post">
-            <input type="hidden" name="name" value="{{ request.args.get('name', '') }}">
-            <input type="hidden" name="reg_id" value="{{ request.args.get('reg_id', '') }}">
-            <input type="hidden" name="branch" value="{{ request.args.get('branch', '') }}">
-            <input type="hidden" name="division" value="{{ request.args.get('division', '') }}">
-            <input type="hidden" name="start_date" value="{{ request.args.get('start_date') }}">
-            <input type="hidden" name="end_date" value="{{ request.args.get('end_date') }}">
-            <button type="submit" class="btn btn-primary">Download CSV</button>
-        </form>
-        {% else %}
-        <p style="color: red;"><strong>Note:</strong> Please perform a search with a valid date range before downloading CSV.</p>
-        {% endif %}
-
-
-
-
-
-        {% endblock %}
-
     </div>
+
+    <br>
+    <br>
+
+    <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-xl shadow-xl p-6 max-w-6xl mx-auto text-white fade-in">
+        <div class="result">
+            <div class="heading">
+                <h1 class="text-2xl font-bold mb-2">Attendance Results</h1>
+                <p class="text-sm text-blue-200 mb-4"><strong>Total records: {{ attendance_records|length }}</strong></p>
+            </div>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <ul class="text-sm text-yellow-300 mb-4 space-y-1">
+                {% for message in messages %}
+                    <li class="text-white">{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% endwith %}
+            {% block content %}
+            <table class="w-full text-sm text-left text-white border-separate border-spacing-y-2">
+                <thead class="text-xs uppercase text-blue-300">
+                    <tr>
+                        <th class="px-4 py-2">Name</th>
+                        <th class="px-4 py-2">Start Time</th>
+                        <th class="px-4 py-2">End Time</th>
+                        <th class="px-4 py-2">Date</th>
+                        <th class="px-4 py-2">Roll Number</th>
+                        <th class="px-4 py-2">Division</th>
+                        <th class="px-4 py-2">Branch</th>
+                        <th class="px-4 py-2">Registration ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_records %}
+                    <tr class="bg-white bg-opacity-10 rounded-md">
+                        <td class="px-4 py-2">{{ record.name }}</td>
+                        <td class="px-4 py-2">{{ record.start_time }}</td>
+                        <td class="px-4 py-2">{{ record.end_time }}</td>
+                        <td class="px-4 py-2">{{ record.date }}</td>
+                        <td class="px-4 py-2">{{ record.roll_no }}</td>
+                        <td class="px-4 py-2">{{ record.division }}</td>
+                        <td class="px-4 py-2">{{ record.branch }}</td>
+                        <td class="px-4 py-2">{{ record.reg_id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <br><br>
+
+            {% if request.args.get('start_date') and request.args.get('end_date') %}
+            <form action="{{ url_for('admin_bp.download_attendance_csv') }}" method="post">
+                <input type="hidden" name="name" value="{{ request.args.get('name', '') }}">
+                <input type="hidden" name="reg_id" value="{{ request.args.get('reg_id', '') }}">
+                <input type="hidden" name="branch" value="{{ request.args.get('branch', '') }}">
+                <input type="hidden" name="division" value="{{ request.args.get('division', '') }}">
+                <input type="hidden" name="start_date" value="{{ request.args.get('start_date') }}">
+                <input type="hidden" name="end_date" value="{{ request.args.get('end_date') }}">
+                <button type="submit"
+                class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold transition">
+                Download CSV
+                </button>
+            </form>
+            {% else %}
+                <p class="mt-4 text-sm text-red-400 font-semibold">
+                <strong>Note:</strong> Please perform a search with a valid date range before downloading CSV.
+                </p>
+            {% endif %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <style>
+  .fade-in {
+    animation: fadeIn 0.7s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+<script>
+  // Push a dummy state into the browser history to detect back button
+  window.addEventListener("load", function () {
+    history.pushState({ page: "stay" }, "", "");
+  });
+
+  window.addEventListener("popstate", function (event) {
+    // Trigger the logout form manually if the user hits back
+    const logoutForm = document.querySelector("form.logoutForm");
+    if (logoutForm) {
+      logoutForm.submit();
+    }
+  });
+</script>
+
+
 </body>
 {% if error %}
 <script>
