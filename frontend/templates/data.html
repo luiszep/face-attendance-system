@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Add Student Data</title>
+  <title>Add Employee Data</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -19,7 +19,7 @@
   </div>
 
   <div class="w-full max-w-xl bg-white bg-opacity-10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl text-white fade-in">
-    <h2 class="text-2xl font-bold text-center text-blue-100 mb-6">Add Student Data</h2>
+    <h2 class="text-2xl font-bold text-center text-blue-100 mb-6">Add Employee Data</h2>
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -33,21 +33,33 @@
 
     <form action="/Attendance_system/add_user" method="post" enctype="multipart/form-data" class="space-y-4">
       <div>
-        <label for="name" class="block text-sm font-medium mb-1">Name:</label>
-        <input type="text" id="name" name="name" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <label for="first_name" class="block text-sm font-medium mb-1">First Name:</label>
+        <input type="text" id="first_name" name="first_name" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
       <div>
-        <label for="branch" class="block text-sm font-medium mb-1">Branch:</label>
-        <input type="text" id="branch" name="branch" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <label for="last_name" class="block text-sm font-medium mb-1">Last Name:</label>
+        <input type="text" id="last_name" name="last_name" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
       <div>
-        <label for="division" class="block text-sm font-medium mb-1">Division:</label>
-        <input type="text" id="division" name="division" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <label for="occupation" class="block text-sm font-medium mb-1">Occupation:</label>
+        <input type="text" id="occupation" name="occupation" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
       <div>
-        <label for="roll_no" class="block text-sm font-medium mb-1">Roll Number:</label>
-        <input type="text" id="roll_no" name="roll_no" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <label for="regular_wage" class="block text-sm font-medium mb-1">Regular Hourly Wage:</label>
+        <input type="number" step="0.01" id="regular_wage" name="regular_wage" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
+      <div>
+        <label for="overtime_wage" class="block text-sm font-medium mb-1">Overtime Hourly Wage:</label>
+        <input type="number" step="0.01" id="overtime_wage" name="overtime_wage" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+        <label for="regular_hours" class="block text-sm font-medium mb-1">Regular Hours Per Day:</label>
+        <input type="number" id="regular_hours" name="regular_hours" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+        <label for="maximum_overtime_hours" class="block text-sm font-medium mb-1">Maximum Overtime Hours Per Day (Optional):</label>
+        <input type="number" id="maximum_overtime_hours" name="maximum_overtime_hours" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
       <div>
         <label for="reg_id" class="block text-sm font-medium mb-1">Register ID:</label>
         <input type="text" id="reg_id" name="reg_id" class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />

@@ -40,14 +40,18 @@ def add_user():
         flash('Session expired or unauthorized access.', 'error')
         return redirect(url_for('auth_bp.login'))
     # Extract form data
-    name = request.form['name']
-    branch = request.form['branch']
-    division = request.form['division']
+    first_name = request.form['first_name']
+    last_name = request.form['last_name']
+    occupation = request.form['occupation']
+    regular_wage = float(request.form['regular_wage'])
+    overtime_wage = float(request.form['overtime_wage'])
+    regular_hours = int(request.form['regular_hours'])
+    maximum_overtime_hours = request.form.get('maximum_overtime_hours')  # optional
+    maximum_overtime_hours = int(maximum_overtime_hours) if maximum_overtime_hours else None
     regid = request.form['reg_id']
-    rollno = request.form['roll_no']
     # Check for duplicate
     existing_student = Student_data.query.filter_by(
-        name=name,
+        regid=regid,
         session_code_id=session['session_code_id']
     ).first()
     if existing_student:
@@ -77,10 +81,13 @@ def add_user():
             return redirect(request.url)
         # Create DB record
         user = Student_data(
-            name=name,
-            rollno=rollno,
-            division=division,
-            branch=branch,
+            first_name=first_name,
+            last_name=last_name,
+            occupation=occupation,
+            regular_wage=regular_wage,
+            overtime_wage=overtime_wage,
+            regular_hours=regular_hours,
+            maximum_overtime_hours=maximum_overtime_hours,
             regid=regid,
             session_code_id=session_id
         )

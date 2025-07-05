@@ -11,24 +11,30 @@ db = SQLAlchemy()
 # -------------------------------
 class Student_data(db.Model):
     """
-    Represents a student entry in the system.
+    Represents an employee entry in the system.
 
     Attributes:
         id (int): Primary key.
-        name (str): Student's name (unique).
-        rollno (str): Roll number (unique).
-        division (str): Academic division or section.
-        branch (str): Academic branch or department.
-        regid (str): Registration ID (unique; used for encoding and attendance).
-        session_code_id (int): Foreign key linking the student to a SessionCode (business context).
+        first_name (str): First name of the employee.
+        last_name (str): Last name of the employee.
+        occupation (str): Job title or role.
+        regular_wage (float): Hourly rate for regular working hours.
+        overtime_wage (float): Hourly rate for overtime work.
+        regular_hours (int): Daily max hours before overtime applies.
+        maximum_overtime_hours (int, optional): Cap on daily overtime hours (nullable).
+        regid (str): Registration ID (used for facial recognition mapping).
+        session_code_id (int): Business or organization context (foreign key).
     """
     __tablename__ = 'student_data'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True, nullable=False)
-    rollno = db.Column(db.String(120), unique=True, nullable=False)
-    division = db.Column(db.String(80), nullable=False)
-    branch = db.Column(db.String(80), nullable=False)
+    first_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
+    occupation = db.Column(db.String(80), nullable=False)
+    regular_wage = db.Column(db.Float, nullable=False)
+    overtime_wage = db.Column(db.Float, nullable=False)
+    regular_hours = db.Column(db.Integer, nullable=False)
+    maximum_overtime_hours = db.Column(db.Integer, nullable=True)
     regid = db.Column(db.String(80), unique=True, nullable=False)
     session_code_id = db.Column(db.Integer, nullable=False)
 

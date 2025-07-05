@@ -76,13 +76,14 @@ def mysqlconnect(student_id, session_code_id):
         student_id (str): The recognized student's ID.
         session_code_id (int): The associated session code.
     Returns:
-        tuple: (id, name, rollno, division, branch) if found,
-               otherwise (None, None, None, None, None).
+        tuple: (id, first_name, last_name, occupation, regular_wage, 
+        overtime_wage, regular_hours, maximum_overtime_hours)
+
     """
     from backend.app import app
     from backend.models import Student_data
     if student_id is None:
-        return None, None, None, None, None
+        return (None,)*8
     try:
         with app.app_context():
             student_data = Student_data.query.filter_by(
@@ -92,16 +93,19 @@ def mysqlconnect(student_id, session_code_id):
             if student_data:
                 return (
                     student_data.id,
-                    student_data.name,
-                    student_data.rollno,
-                    student_data.division,
-                    student_data.branch
+                    student_data.first_name,
+                    student_data.last_name,
+                    student_data.occupation,
+                    student_data.regular_wage,
+                    student_data.overtime_wage,
+                    student_data.regular_hours,
+                    student_data.maximum_overtime_hours
                 )
             else:
-                return None, None, None, None, None
+                return (None,)*8
     except Exception as e:
         print("Error fetching student data:", e)
-        return None, None, None, None, None
+        return (None,)*8
 
 # --- Record or update attendance entry ---
 def record_attendance(name, current_date, roll_no, div, branch, reg_id, session_code_id):
