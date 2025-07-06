@@ -108,16 +108,16 @@ def mysqlconnect(student_id, session_code_id):
         return (None,)*8
 
 # --- Record or update attendance entry ---
-def record_attendance(name, current_date, roll_no, div, branch, reg_id, session_code_id):
+def record_attendance(first_name, last_name, occupation, regular_wage, current_date, reg_id, session_code_id):
     """
     Record a new attendance entry or update the existing one for the student on the current date.
     Args:
-        name (str): Student's full name.
+        first_name (str): First name of the employee.
+        last_name (str): Last name of the employee.
+        occupation (str): Job title or role.
+        regular_wage (float): Hourly wage at the time of attendance.
         current_date (date): The date of attendance.
-        roll_no (str): Student's roll number.
-        div (str): Division or class section.
-        branch (str): Student's academic branch.
-        reg_id (str): Unique registration ID of the student.
+        reg_id (str): Unique registration ID of the employee.
         session_code_id (int): ID of the active session code.
     """
     from backend.app import app
@@ -139,19 +139,19 @@ def record_attendance(name, current_date, roll_no, div, branch, reg_id, session_
             else:
                 # Create a new attendance record
                 new_attendance = Attendance(
-                    name=name,
+                    first_name=first_name,
+                    last_name=last_name,
+                    occupation=occupation,
+                    regular_wage=regular_wage,
                     start_time=current_time_str,
                     end_time=current_time_str,
                     date=current_date,
-                    roll_no=roll_no,
-                    division=div,
-                    branch=branch,
                     reg_id=reg_id,
                     session_code_id=session_code_id
                 )
                 db.session.add(new_attendance)
                 db.session.commit()
-                print(f"Attendance recorded for {reg_id} in session {session_code_id}.")
+                print(f"Attendance recorded for {first_name} {last_name} (reg_id: {reg_id}) in session {session_code_id}.")
                 print("Start and end time initialized (first entry).")
     except Exception as e:
         print(f"[ERROR] Failed to record attendance: {e}")

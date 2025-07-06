@@ -112,14 +112,23 @@ def get_attendance():
                 filters = [Attendance.session_code_id == session['session_code_id']]
 
                 # Extract known filters
-                if 'name' in query_parameters:
-                    filters.append(Attendance.name.ilike(f"%{query_parameters['name']}%"))
+                if 'first_name' in query_parameters:
+                    filters.append(Attendance.first_name.ilike(f"%{query_parameters['first_name']}%"))
+                if 'last_name' in query_parameters:
+                    filters.append(Attendance.last_name.ilike(f"%{query_parameters['last_name']}%"))
                 if 'reg_id' in query_parameters:
                     filters.append(Attendance.reg_id.ilike(f"%{query_parameters['reg_id']}%"))
-                if 'branch' in query_parameters:
-                    filters.append(Attendance.branch.ilike(f"%{query_parameters['branch']}%"))
-                if 'division' in query_parameters:
-                    filters.append(Attendance.division.ilike(f"%{query_parameters['division']}%"))
+                if 'occupation' in query_parameters:
+                    filters.append(Attendance.occupation.ilike(f"%{query_parameters['occupation']}%"))
+
+                if 'regular_wage' in query_parameters:
+                    try:
+                        wage = float(query_parameters['regular_wage'])
+                        filters.append(Attendance.regular_wage == wage)
+                    except ValueError:
+                        flash("Invalid wage value.", "error")
+                        attendance_records = []
+                        return render_template('results.html', attendance_records=attendance_records)
 
                 # Handle date range
                 start_date_str = query_parameters.get('start_date')

@@ -122,14 +122,15 @@ def gen_frames(camera, session_code_id, duration=5):
             matches, facedis, matchIndex = compare(encodeListKnown, encodeFace)
             student_id = get_data(matches, matchIndex, studentIds)
             data = mysqlconnect(student_id, session_code_id)
-            name, roll_no, div, branch, reg_id = data[1], data[2], data[3], data[4], student_id
-            print(name)
+            first_name, last_name, occupation, regular_wage = data[1], data[2], data[3], data[4]
+            reg_id = student_id
+            print(f"{first_name} {last_name}")
             # Scale face location back to original frame size
             y1, x2, y2, x1 = [v * 4 for v in faceLoc]
             bbox = x1, y1, x2 - x1, y2 - y1
             # Draw bounding box and label
             imgBackground = cvzone.cornerRect(frame, bbox, rt=0)
-            cv2.putText(frame, name, (bbox[0], bbox[1] - 35),
+            cv2.putText(frame, first_name, (bbox[0], bbox[1] - 35),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 3, lineType=cv2.LINE_AA)
             cv2.putText(imgBackground, reg_id, (bbox[0], bbox[1] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
@@ -137,7 +138,7 @@ def gen_frames(camera, session_code_id, duration=5):
             if student_id:
                 current_date = datetime.datetime.now().date()
                 t = threading.Thread(target=record_attendance,
-                                     args=(name, current_date, roll_no, div, branch, reg_id, session_code_id))
+                                    args=(first_name, last_name, occupation, regular_wage, current_date, reg_id, session_code_id))
                 t.start()
         # Encode frame as JPEG and yield to browser
         ret, buffer = cv2.imencode('.jpg', frame)

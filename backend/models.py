@@ -48,34 +48,33 @@ class Attendance(db.Model):
 
     Attributes:
         id (int): Primary key.
-        name (str): Student's name.
+        first_name (str): First name of the employee.
+        last_name (str): Last name of the employee.
+        occupation (str): Job title or role.
+        regular_wage (float): Hourly wage at the time of attendance.        
         start_time (str): Time when the student first appeared.
         end_time (str): Time when the student last appeared.
         date (date): Date of the attendance record.
-        roll_no (str): Student's roll number.
-        division (str): Academic division or section.
-        branch (str): Academic branch or department.
         reg_id (str): Registration ID (links back to student identity).
         session_code_id (int): Foreign key linking to the SessionCode (business context).
     """
     __tablename__ = 'attendance'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
     start_time = db.Column(db.String(20))
     end_time = db.Column(db.String(20))
     date = db.Column(db.Date, default=datetime.date.today)
-    roll_no = db.Column(db.String(20), nullable=False)
-    division = db.Column(db.String(10))
-    branch = db.Column(db.String(100))
+    regular_wage = db.Column(db.Float, nullable=False)
+    occupation = db.Column(db.String(80), nullable=False)
     reg_id = db.Column(db.String(100))
     session_code_id = db.Column(db.Integer, nullable=False)
 
     # Ensures that a student can have only one record per date
     __table_args__ = (
-        db.UniqueConstraint('name', 'date', name='uix_name_date'),
+        db.UniqueConstraint('reg_id', 'date', name='uix_reg_id_date'),
     )
-
 
 # -------------------------------
 # Model: Users
@@ -95,7 +94,7 @@ class Users(db.Model, UserMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False)
+    username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     reg_id = db.Column(db.String(20), nullable=False)
     role = db.Column(db.String(20))

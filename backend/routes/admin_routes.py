@@ -146,19 +146,27 @@ def download_attendance_csv():
         filters.append(Attendance.date.between(start_date, end_date))
 
         # Optional filters from form
-        name = request.form.get('name')
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        occupation = request.form.get('occupation')
+        regular_wage_str = request.form.get('regular_wage')
         reg_id = request.form.get('reg_id')
-        branch = request.form.get('branch')
-        division = request.form.get('division')
 
-        if name:
-            filters.append(Attendance.name.ilike(f"%{name}%"))
+        if first_name:
+            filters.append(Attendance.first_name.ilike(f"%{first_name}%"))
+        if last_name:
+            filters.append(Attendance.last_name.ilike(f"%{last_name}%"))
         if reg_id:
             filters.append(Attendance.reg_id.ilike(f"%{reg_id}%"))
-        if branch:
-            filters.append(Attendance.branch.ilike(f"%{branch}%"))
-        if division:
-            filters.append(Attendance.division.ilike(f"%{division}%"))
+        if occupation:
+            filters.append(Attendance.occupation.ilike(f"%{occupation}%"))
+        if regular_wage_str:
+            try:
+                regular_wage = float(regular_wage_str)
+                filters.append(Attendance.regular_wage == regular_wage)
+            except ValueError:
+                flash("Invalid wage value.", "error")
+                return redirect(url_for('general_bp.get_attendance'))
 
         # Final query
         attendance_records = Attendance.query.filter(and_(*filters)).all()
@@ -171,13 +179,13 @@ def download_attendance_csv():
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow([
-            'Name', 'Start Time', 'End Time', 'Date',
-            'Roll Number', 'Division', 'Branch', 'Registration ID'
+            'First Name', 'Last Name', 'Occupation', 'Regular Wage',
+            'Start Time', 'End Time', 'Date', 'Registration ID'
         ])
         for record in attendance_records:
             writer.writerow([
-                record.name, record.start_time, record.end_time, record.date,
-                record.roll_no, record.division, record.branch, record.reg_id
+                record.first_name, record.last_name, record.occupation, record.regular_wage,
+                record.start_time, record.end_time, record.date, record.reg_id
             ])
 
         filename = f"attendance_records_{start_date}_to_{end_date}.csv"
