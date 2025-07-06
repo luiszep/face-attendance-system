@@ -252,3 +252,39 @@ def edit_employee():
         return redirect(url_for('general_bp.images'))
 
     return render_template('edit_employee.html', employee=employee)
+
+# -- Admin Delete Employee Route --
+@general_bp.route('/delete_employee', methods=['POST'])
+@login_required
+def delete_employee():
+    if current_user.role != 'admin':
+        return "Unauthorized access", 403
+
+    regid = request.form.get('regid')
+    session_id = session.get('session_code_id')
+
+    if not regid or not session_id:
+        flash("Missing data for deletion.", "error")
+        return redirect(url_for('general_bp.images'))
+
+    # Step 1: Delete employee record
+    employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
+    if employee:
+        db.session.delete(employee)
+        db.session.commit()
+        flash(f"Deleted employee {regid} from database.", "info")
+    else:
+        flash("Employee not found.", "error")
+        return redirect(url_for('general_bp.images'))
+
+    # Step 2: Delete image from S3
+    from backend.utils.s3_utils import delete_file
+    image_filename = f"{regid.upper()}.jpg"
+    s3_key = f"{current_app.config['UPLOAD_FOLDER']}/{session_id}/{image_filename}"
+    deleted = delete_file(s3_key)
+    if deleted:
+        flash("Image deleted from storage.", "success")
+    else:
+        flash("Failed to delete image file from S3.", "warning")
+
+    return redirect(url_for('general_bp.images'))

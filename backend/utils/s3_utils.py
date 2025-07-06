@@ -140,3 +140,22 @@ def load_encoding_from_s3(session_id, prefix="encodings"):
     except Exception as e:
         print(f"[S3 Error] Failed to load encoding from S3: {e}")
         return None
+
+
+def delete_file(s3_key):
+    """
+    Deletes a file from S3 using its full S3 key.
+    
+    Args:
+        s3_key (str): The key of the file in S3 (e.g., 'uploads/1/EMP123.JPG')
+
+    Returns:
+        bool: True if deletion succeeded, False otherwise.
+    """
+    try:
+        s3.delete_object(Bucket=AWS_S3_BUCKET_NAME, Key=s3_key)
+        print(f"[S3] Deleted file: {s3_key}")
+        return True
+    except Exception as e:
+        print(f"[S3 Error] Failed to delete {s3_key}: {e}")
+        return False
