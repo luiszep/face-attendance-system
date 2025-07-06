@@ -165,39 +165,41 @@ def get_attendance():
 @general_bp.route('/images') 
 @login_required
 def images():
-    """
-    Allow admin to view all uploaded images for the current session.
-    - Lists image filenames in session-specific upload folder (S3)
-    - Generates presigned URLs for each image
-    - Renders image_gallery.html with image count and list
-    """
     if 'session_code_id' not in session:
         flash('Session expired or unauthorized access.', 'error')
         return redirect(url_for('auth_bp.login'))
+
     if current_user.role == 'admin':
         from backend.utils.s3_utils import list_files_in_folder, generate_presigned_url
-        # Build S3 prefix based on session ID
+
         session_id = str(session['session_code_id'])
         s3_prefix = f"{current_app.config['UPLOAD_FOLDER']}/{session_id}"
-        # List files in S3 "folder"
         image_keys = list_files_in_folder(s3_prefix)
         image_no = len(image_keys)
         print(f"No of images: {image_no}")
-        # Generate presigned URLs
+
+        employees = Student_data.query.filter_by(session_code_id=session_id).all()
+        emp_lookup = {emp.regid.upper() + '.JPG': emp for emp in employees}
+
         images = []
         for filename in image_keys:
-            full_key = f"{s3_prefix}/{filename}"  # ← now it becomes: uploads/1/FLUFFY1.jpg
+            full_key = f"{s3_prefix}/{filename}"
             url = generate_presigned_url(full_key)
+            matched_emp = emp_lookup.get(filename.upper())
             images.append({
                 'filename': filename,
-                'url': url
+                'url': url,
+                'employee': matched_emp
             })
+
         return render_template(
             'image_gallery.html',
             images=images,
             image_no=image_no
         )
+
     return 'Unauthorized access'
+
 
 # -- Serve Uploaded Image Securely --
 @general_bp.route('/uploads/<folder>/<filename>')
@@ -217,3 +219,36 @@ def get_image(folder, filename):
         return redirect(url)
     else:
         return "File not found", 404
+
+
+# -- Admin Edit Employee Route --
+@general_bp.route('/edit_employee', methods=['GET', 'POST'])
+@login_required
+def edit_employee():
+    if current_user.role != 'admin':
+        return "Unauthorized access", 403
+
+    regid = request.args.get('regid') if request.method == 'GET' else request.form.get('regid')
+    session_id = session.get('session_code_id')
+
+    employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
+
+    if not employee:
+        flash("Employee not found.", "error")
+        return redirect(url_for('general_bp.images'))
+
+    if request.method == 'POST':
+        employee.first_name = request.form.get('first_name')
+        employee.last_name = request.form.get('last_name')
+        employee.occupation = request.form.get('occupation')
+        employee.regular_wage = float(request.form.get('regular_wage'))
+        employee.overtime_wage = float(request.form.get('overtime_wage'))
+        employee.regular_hours = int(request.form.get('regular_hours'))
+        max_ot = request.form.get('maximum_overtime_hours')
+        employee.maximum_overtime_hours = int(max_ot) if max_ot else None
+
+        db.session.commit()
+        flash('Employee updated successfully!', 'success')
+        return redirect(url_for('general_bp.images'))
+
+    return render_template('edit_employee.html', employee=employee)

@@ -16,8 +16,27 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
       {% for image in images %}
       <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg overflow-hidden shadow-md p-4">
-        <img src="{{ image.url }}" alt="{{ image.filename }}" class="rounded-md w-full object-cover max-h-80">
-        <p class="mt-2 text-center text-sm font-semibold text-blue-200">{{ image.filename }}</p>
+        <img src="{{ image.url }}" alt="{{ image.filename }}" class="rounded-md w-full object-cover max-h-80 mx-auto mb-2">
+        {% if image.employee %}
+        <h2 class="text-lg font-bold text-blue-100">{{ image.employee.first_name }} {{ image.employee.last_name }}</h2>
+        <p class="text-sm text-gray-300">{{ image.employee.occupation }}</p>
+        <p class="text-sm">Reg Wage: ${{ image.employee.regular_wage }}</p>
+        <p class="text-sm">OT Wage: ${{ image.employee.overtime_wage }}</p>
+        <p class="text-sm">Hours/Day: {{ image.employee.regular_hours }}</p>
+        {% if image.employee.maximum_overtime_hours %}
+          <p class="text-sm">Max OT: {{ image.employee.maximum_overtime_hours }}</p>
+        {% endif %}
+        <p class="text-xs text-gray-400 mt-1">RegID: {{ image.employee.regid }}</p>
+
+        <form method="GET" action="{{ url_for('general_bp.edit_employee') }}">
+          <input type="hidden" name="regid" value="{{ image.employee.regid }}">
+          <button type="submit" class="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-sm px-4 py-1 rounded-md transition">
+            Edit
+          </button>
+        </form>
+      {% else %}
+        <p class="text-red-300 text-sm italic mt-2">No matching employee record.</p>
+      {% endif %}
       </div>
       {% endfor %}
     </div>
