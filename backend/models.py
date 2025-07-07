@@ -35,8 +35,12 @@ class Student_data(db.Model):
     overtime_wage = db.Column(db.Float, nullable=False)
     regular_hours = db.Column(db.Integer, nullable=False)
     maximum_overtime_hours = db.Column(db.Integer, nullable=True)
-    regid = db.Column(db.String(80), unique=True, nullable=False)
+    regid = db.Column(db.String(80), nullable=False)
     session_code_id = db.Column(db.Integer, nullable=False)
+
+    __table_args__ = (
+    db.UniqueConstraint('regid', 'session_code_id', name='uq_regid_per_session'),
+    )
 
 
 # -------------------------------
@@ -73,8 +77,9 @@ class Attendance(db.Model):
 
     # Ensures that a student can have only one record per date
     __table_args__ = (
-        db.UniqueConstraint('reg_id', 'date', name='uix_reg_id_date'),
+        db.UniqueConstraint('reg_id', 'date', 'session_code_id', name='uix_regid_date_session'),
     )
+
 
 # -------------------------------
 # Model: Users
