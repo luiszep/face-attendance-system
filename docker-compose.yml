@@ -1,0 +1,16 @@
+version: '3.2'
+
+services:
+  sourcegraph:
+    image: sourcegraph/server:5.2.3  # or latest stable tag (optional)
+    container_name: sourcegraph
+    ports:
+      - "7080:7080"  # Web interface
+      - "3370:3370"  # Code intelligence (keep this)
+    volumes:
+      - sourcegraph_data:/var/opt/sourcegraph  # Persistent Sourcegraph data
+      - .:/home/sourcegraph/repos/face-attendance-base  # Mount local project
+    restart: unless-stopped
+
+volumes:
+  sourcegraph_data:
