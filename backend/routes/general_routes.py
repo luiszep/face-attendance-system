@@ -13,6 +13,11 @@ import datetime
 # Define the general blueprint
 general_bp = Blueprint('general_bp', __name__)
 
+# -- Landing Page Route --
+@general_bp.route('/landing')
+def landing_page():
+    return render_template('landing.html', current_year=datetime.datetime.now().year)
+
 # -- Student Profile Route --
 @general_bp.route('/profile', methods=['GET', 'POST'])
 def profile():

@@ -6,15 +6,43 @@ from sqlalchemy.exc import SQLAlchemyError
 
 # --- Standard library ---
 import re
+import datetime
 
 # --- Internal modules ---
-from backend.models import db, Users, SessionCode
+from backend.models import db, Users, SessionCode, PotentialClient
 
 # --- Initialize Bcrypt ---
 bcrypt = Bcrypt()
 
 # --- Define Blueprint for authentication ---
 auth_bp = Blueprint('auth_bp', __name__)
+
+# -- Sign Up Route --
+@auth_bp.route('/sign-up', methods=['GET', 'POST'])
+def sign_up():
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        email = request.form.get('email')
+        phone_number = request.form.get('phone')
+
+        # Check if already exists
+        existing = PotentialClient.query.filter_by(email=email).first()
+        if existing:
+            error = 'This email has already been submitted. If you need help, contact our team.'
+        else:
+            try:
+                new_client = PotentialClient(email=email, phone_number=phone_number)
+                db.session.add(new_client)
+                db.session.commit()
+                success = 'Your request has been submitted. Our team will reach out soon.'
+            except Exception as e:
+                db.session.rollback()
+                error = 'An error occurred. Please try again later.'
+                print(f"[DB ERROR] {e}")
+
+    return render_template('sign_up.html', error=error, success=success, current_year=datetime.datetime.now().year)
 
 # --- Register Blueprint ---
 @auth_bp.route('/register', methods=['GET', 'POST'])

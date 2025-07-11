@@ -267,16 +267,25 @@ def index():
         return redirect(url_for('enter_session'))
     return render_template('index.html')
 
-# --- App Entry Point ---
 if __name__ == '__main__':
     """
     Entry point for launching the app in development mode.
-    Uses HTTP (no SSL). Hosts the mounted app on all network interfaces.
+    Uses HTTPS with mkcert-generated certificates. Hosts the mounted app on all network interfaces.
     """
     debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
+
+    # Use SSL if enabled
+    if app.config['USE_SSL']:
+        cert_path = app.config['CERT_PATH']
+        key_path = app.config['KEY_PATH']
+        ssl_context = (cert_path, key_path)
+    else:
+        ssl_context = None
+
     hostedapp.run(
         debug=debug_mode,
-        host='0.0.0.0'
+        host='0.0.0.0',
+        ssl_context=ssl_context
     )
 
 

@@ -133,3 +133,25 @@ class SessionCode(db.Model):
     code = db.Column(db.String(50), unique=True, nullable=False)  # e.g., 'school-abc-123'
     business_name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+# -------------------------------
+# Model: PotentialClient
+# -------------------------------
+class PotentialClient(db.Model):
+    """
+    Stores early access or interest submissions from prospective users.
+
+    Attributes:
+        id (int): Primary key.
+        email (str): User-submitted email address.
+        phone_number (str): Optional phone number for follow-up.
+        submitted_at (datetime): Timestamp of the request.
+        status (str): Current status of the request (e.g., 'pending', 'approved', 'declined').
+    """
+    __tablename__ = 'potential_clients'
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    phone_number = db.Column(db.String(20), nullable=True)
+    submitted_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    status = db.Column(db.String(20), default='pending')

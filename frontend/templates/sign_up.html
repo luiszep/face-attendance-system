@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - AgoraAI</title>
+  <title>Sign Up - AgoraAI</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
     @media (max-width: 768px) {
@@ -29,43 +29,40 @@
     <h1 class="text-green-500 text-2xl font-bold">The Agora Company</h1>
     <nav class="space-x-6">
       <a href="{{ url_for('general_bp.landing_page') }}" class="hover:text-green-500">Home</a>
-      <a href="{{ url_for('auth_bp.sign_up') }}" class="hover:text-green-500">Sign Up</a>
+      <a href="{{ url_for('auth_bp.login') }}" class="hover:text-green-500">Login</a>
     </nav>
   </header>
 
-  <!-- Login Form Section -->
+  <!-- Sign Up Form Section -->
   <main class="flex justify-center items-center min-h-screen pt-24 px-6">
     <div class="bg-black bg-opacity-100 p-10 rounded-xl shadow-xl w-full max-w-md border-4 border-green-400 neon-border">
-      <h2 class="text-3xl font-bold mb-6 text-center">Login</h2>
-      {% if request.args.get('error') %}
-        <div class="bg-red-600 text-white text-sm p-3 rounded mb-4 text-center">{{ request.args.get('error') }}</div>
+      <h2 class="text-3xl font-bold mb-6 text-center">Sign Up</h2>
+      {% if error %}
+        <div class="bg-red-600 text-white text-sm p-3 rounded mb-4 text-center">{{ error }}</div>
+      {% elif success %}
+        <div class="bg-green-600 text-white text-sm p-3 rounded mb-4 text-center">{{ success }}</div>
       {% endif %}
-      <form action="{{ url_for('auth_bp.login') }}" method="post" class="space-y-6" novalidate>
+      <form method="POST" action="{{ url_for('auth_bp.sign_up') }}" class="space-y-6" novalidate>
         <div>
-          <label for="username" class="block text-sm font-semibold mb-1">Username</label>
-          <input type="text" id="username" name="username" required
+          <label for="email" class="block text-sm font-semibold mb-1">Email Address</label>
+          <input type="email" id="email" name="email" required
+            pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
             class="w-full px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500" />
         </div>
+
         <div>
-          <label for="password" class="block text-sm font-semibold mb-1">Password</label>
-          <input type="password" id="password" name="password" required
+          <label for="phone" class="block text-sm font-semibold mb-1">Phone Number</label>
+          <input type="tel" id="phone" name="phone" required
+            pattern="^\+?1?\d{10,15}$"
+            placeholder="+11234567890"
             class="w-full px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500" />
         </div>
-        <div>
-          <label for="session_code" class="block text-sm font-semibold mb-1">Session Code</label>
-          <input type="text" id="session_code" name="session_code" required
-            class="w-full px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500" />
-        </div>
+
         <button type="submit"
           class="w-full bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-full transition duration-300">
-          Login
+          Submit Request
         </button>
       </form>
-      <div class="mt-8 text-center text-sm text-green-300 space-y-1">
-        <p>Need help? Contact us:</p>
-        <p><strong>Phone:</strong> +1 (915) 355-9327</p>
-        <p><strong>Email:</strong> <a href="mailto:agoramarketplace03@gmail.com" class="underline hover:text-green-100">agoramarketplace03@gmail.com</a></p>
-      </div>
     </div>
   </main>
 

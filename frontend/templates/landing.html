@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgoraAI - Face Attendance</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @media (max-width: 768px) {
+      body {
+        display: none;
+      }
+    }
+    .hero-bg {
+      background-image: url('/Attendance_system/static/images/background.png');
+      background-repeat: repeat;
+      background-position: center;
+      background-color: black;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    .neon-border {
+      box-shadow: 0 0 16px 2px #22ff22, 0 0 32px 4px #22ff22;
+    }
+  </style>
+</head>
+<body class="bg-black text-white font-sans">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-black border-b border-white/10">
+    <h1 class="text-green-500 text-2xl font-bold">The Agora Company</h1>
+    <nav class="space-x-6">
+      <a href="#home" class="hover:text-green-500">Home</a>
+      <a href="#how-it-works" class="hover:text-green-500">How It Works</a>
+      <a href="#get-started" class="hover:text-green-500">Get Started</a>
+      <a href="{{ url_for('auth_bp.login') }}" class="hover:text-green-500">Login</a>
+      <a href="{{ url_for('auth_bp.sign_up') }}" class="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-full font-semibold">Sign Up</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section id="home" class="h-screen hero-bg text-white relative pt-24">
+    <div class="relative z-10 h-full flex flex-col justify-center items-center text-center px-4">
+      <div class="bg-black bg-opacity-100 p-10 md:p-14 rounded-xl backdrop-blur-sm shadow-2xl max-w-4xl w-full px-8 border-4 border-green-400 neon-border">
+        <h1 id="typed-headline" class="text-5xl font-extrabold mb-6"></h1>
+        <p class="text-xl mb-8">
+          Automate attendance, eliminate errors, and sync effortlessly with payroll — no extra hardware, no paperwork, just AI.        </p>
+        <a href="#get-started" class="bg-green-500 hover:bg-green-600 text-white text-lg px-6 py-3 rounded-full font-semibold shadow-lg transition duration-300">
+          Try AgoraAI for Free
+        </a>
+      </div>
+    </div>
+      
+    <!-- Scroll Down Arrow -->
+    <a href="#how-it-works" class="scroll-down-arrow absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
+      <div class="w-6 h-6 border-b-2 border-r-2 border-white transform rotate-45"></div>
+    </a>
+  </section>
+
+  <!-- Gradient Transition -->
+  <div class="h-12 bg-gradient-to-b from-black to-gray-900"></div>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="bg-gray-900 text-white py-20 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-4xl font-bold mb-12">How It Works</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-12">
+        <!-- Step 1 -->
+        <div class="flex flex-col items-center">
+          <div class="bg-green-500 p-4 rounded-full mb-4">
+            <svg class="w-8 h-8 text-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v6m3-3h-6m-4 0a4 4 0 100-8 4 4 0 000 8zm0 2c-2.67 0-8 1.34-8 4v1h8" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Sign Up in Seconds</h3>
+          <p class="text-gray-300 max-w-xs">No setup fees. No contracts. Just instant access to your dashboard.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="flex flex-col items-center">
+          <div class="bg-green-500 p-4 rounded-full mb-4">
+            <svg class="w-8 h-8 text-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2m-4-4l-4-4m0 0l-4 4m4-4v12" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Add Your Team</h3>
+          <p class="text-gray-300 max-w-xs">Upload employees via form or spreadsheet — it’s quick and simple.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="flex flex-col items-center">
+          <div class="bg-green-500 p-4 rounded-full mb-4">
+            <svg class="w-8 h-8 text-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 20h16M6 16v4m6-10v10m6-6v6" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Start Tracking</h3>
+          <p class="text-gray-300 max-w-xs">Launch live attendance and get reports instantly. Accuracy guaranteed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gradient Transition -->
+  <div class="h-12 bg-gradient-to-b from-gray-900 to-black"></div>
+
+  <!-- Final CTA Section -->
+  <section id="get-started" class="py-20 bg-black text-center text-white px-4">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-3xl font-bold mb-4">Your Team. Your Time. Tracked by AI.</h2>
+      <p class="text-lg text-gray-300 mb-8">
+        Start free in minutes. No contracts. No risk. Just faster, smarter attendance.
+      </p>
+      <a href="{{ url_for('auth_bp.sign_up') }}" class="bg-green-500 hover:bg-green-600 text-white text-lg px-6 py-3 rounded-full font-semibold shadow-md transition duration-300">
+        Create Your Account
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black text-center text-gray-500 text-sm py-6 border-t border-white/10">
+    <p>&copy; {{ current_year }} The Agora Company. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      new Typed('#typed-headline', {
+        strings: ['The First AI Attendance System for Small Businesses'],
+        typeSpeed: 60,        // Slower typing (higher = slower)
+        startDelay: 400,      // Wait before starting (ms)
+        showCursor: false,    // No blinking cursor
+        fadeOut: true,        // Fade out at the end (optional, looks modern)
+        fadeOutDelay: 500,    // Fade out delay (ms)
+      });
+    });
+  </script>
+</body>
+</html>
