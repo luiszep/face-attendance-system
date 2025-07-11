@@ -23,7 +23,19 @@ def data():
     if current_user.role == 'admin':
         return render_template('data.html')
     return 'Unauthorized Access'
-    
+
+# NEW: Weekly Attendance Route
+@admin_bp.route('/weekly')
+@login_required
+def weekly_attendance():
+    return render_template('weekly.html', active_tab='weekly')
+
+# NEW: Custom Query Route
+@admin_bp.route('/query')
+@login_required
+def custom_query():
+    return render_template('custom_query.html', active_tab='query')
+
 # -- Add User Route --
 @admin_bp.route('/add_user', methods=['POST'])
 @login_required
