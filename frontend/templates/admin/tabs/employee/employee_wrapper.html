@@ -1,0 +1,46 @@
+<!-- Employee Database Tab Layout -->
+<div id="employee-db" class="flex flex-1 h-full w-full overflow-hidden bg-gray-50">
+    <!-- Sidebar -->
+    <div class="w-64 shrink-0 bg-white">
+      {% include 'admin/tabs/employee/employee_sidebar.html' %}
+    </div>
+  
+    <!-- Editor Panel -->
+    <div class="flex-1 bg-gray-50 p-4 overflow-y-auto scrollbar-hide">
+      {% include 'admin/tabs/employee/employee_editor_panel.html' %}
+    </div>
+  </div>
+  
+  <script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+      const regIdInput = document.getElementById('reg_id');
+      const imageInput = document.getElementById('image');
+      const imageError = document.getElementById('imageError');
+      const submitBtn = document.getElementById('submitBtn');
+  
+      function validateImageFilename() {
+        const regId = regIdInput.value.trim();
+        const file = imageInput.files[0];
+        if (!regId || !file) {
+          imageError.classList.add('hidden');
+          submitBtn.disabled = true;
+          return;
+        }
+  
+        const expected = `${regId.toUpperCase()}.jpg`;
+        const actual = file.name;
+  
+        if (actual === expected) {
+          imageError.classList.add('hidden');
+          submitBtn.disabled = false;
+        } else {
+          imageError.classList.remove('hidden');
+          submitBtn.disabled = true;
+        }
+      }
+  
+      regIdInput.addEventListener('input', validateImageFilename);
+      imageInput.addEventListener('change', validateImageFilename);
+    });
+  </script>
+  

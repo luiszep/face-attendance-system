@@ -7,67 +7,70 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-100 text-gray-900 min-h-screen">
+<body class="bg-white text-gray-900">
 
-  <!-- Top Header Bar -->
-  <header class="w-full bg-gray-900 text-white px-8 py-4 flex justify-between items-center shadow">
-    <div class="text-2xl font-black tracking-tight">FACIAL RECOGNITION</div>
-    <div class="flex items-center space-x-4">
-      <span class="bg-gray-800 px-4 py-1 rounded-full font-mono text-sm">ID: {{ current_user.id }}</span>
-      <form action="{{ url_for('auth_bp.logout') }}" method="post" class="inline">
-        <button class="bg-red-600 hover:bg-red-700 px-4 py-1 rounded-full font-semibold shadow transition">
-          Logout
-        </button>
-      </form>
+  <!-- Full Page Layout (Matches React) -->
+  <div class="flex flex-col h-screen w-full overflow-hidden">
+
+    <!-- Top Header Bar (Fixed) -->
+    <header class="w-full bg-gray-900 text-white px-8 py-4 flex justify-between items-center shadow shrink-0">
+      <div class="text-2xl font-black tracking-tight">FACIAL RECOGNITION</div>
+      <div class="flex items-center space-x-4">
+        <span class="bg-gray-800 px-4 py-1 rounded-full font-mono text-sm">ID: {{ current_user.id }}</span>
+        <form action="{{ url_for('auth_bp.logout') }}" method="post" class="inline">
+          <button class="bg-red-600 hover:bg-red-700 px-4 py-1 rounded-full font-semibold shadow transition">
+            Logout
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <!-- Tab Bar (Fixed) -->
+    <div class="w-full bg-white border-b border-gray-200 flex px-8 shrink-0">
+      <nav class="flex space-x-6 w-full">
+        <a href="{{ url_for('admin_bp.data') }}"
+           class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
+           {% if active_tab == 'employee' %}
+             border-pink-500 text-pink-600
+           {% else %}
+             border-transparent text-gray-500 hover:text-pink-400
+           {% endif %}">
+          Employee Database
+        </a>
+        <a href="{{ url_for('admin_bp.weekly_attendance') }}"
+           class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
+           {% if active_tab == 'weekly' %}
+             border-pink-500 text-pink-600
+           {% else %}
+             border-transparent text-gray-500 hover:text-pink-400
+           {% endif %}">
+          Weekly Attendance
+        </a>
+        <a href="{{ url_for('admin_bp.custom_query') }}"
+           class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
+           {% if active_tab == 'query' %}
+             border-pink-500 text-pink-600
+           {% else %}
+             border-transparent text-gray-500 hover:text-pink-400
+           {% endif %}">
+          Custom Query
+        </a>
+      </nav>
     </div>
-  </header>
 
-  <!-- Tab Bar (adapted from JSX version) -->
-  <div class="w-full bg-white border-b border-gray-200 flex px-8">
-    <nav class="flex space-x-6 w-full">
-      <a href="{{ url_for('admin_bp.data') }}"
-         class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-4 transition-colors
-         {% if active_tab == 'employee' %}
-           border-pink-500 text-pink-600
-         {% else %}
-           border-transparent text-gray-500 hover:text-pink-400
-         {% endif %}">
-        Employee Database
-      </a>
-      <a href="{{ url_for('admin_bp.weekly_attendance') }}"
-         class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-4 transition-colors
-         {% if active_tab == 'weekly' %}
-           border-pink-500 text-pink-600
-         {% else %}
-           border-transparent text-gray-500 hover:text-pink-400
-         {% endif %}">
-        Weekly Attendance
-      </a>
-      <a href="{{ url_for('admin_bp.custom_query') }}"
-         class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-4 transition-colors
-         {% if active_tab == 'query' %}
-           border-pink-500 text-pink-600
-         {% else %}
-           border-transparent text-gray-500 hover:text-pink-400
-         {% endif %}">
-        Custom Query
-      </a>
-    </nav>
+    <!-- Main Scrollable Content Area -->
+    <div class="flex-1 overflow-y-auto">
+      {% if active_tab == 'employee' %}
+        {% include 'admin/tabs/employee/employee_wrapper.html' %}
+      {% elif active_tab == 'weekly' %}
+        {% include 'admin/tabs/weekly_attendance.html' %}
+      {% elif active_tab == 'query' %}
+        {% include 'admin/tabs/custom_query.html' %}
+      {% endif %}
+    </div>
   </div>
 
-  <!-- Page Container -->
-  <div class="max-w-4xl mx-auto px-6 py-10">
-    <!-- Employee Database Tab -->
-    {% include 'admin/tabs/employee_database.html' %}
-
-    <!-- Weekly Attendance Tab -->
-    {% include 'admin/tabs/weekly_attendance.html' %}
-
-    <!-- Custom Query Tab -->
-    {% include 'admin/tabs/custom_query.html' %}
-  </div>
-
-  <!-- Tab Scripts & Validation -->
+  <!-- Page Scripts -->
   <script>
     function reloadPage() { location.reload(); }
   </script>

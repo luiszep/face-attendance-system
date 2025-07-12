@@ -63,36 +63,3 @@
       <a href="/Attendance_system/images" onclick="reloadPage()" class="text-blue-600 underline hover:text-blue-800 text-sm">View Uploaded Images</a>
     </div>
 </div>
-
-<script type="module">
-  document.addEventListener('DOMContentLoaded', () => {
-    const regIdInput = document.getElementById('reg_id');
-    const imageInput = document.getElementById('image');
-    const imageError = document.getElementById('imageError');
-    const submitBtn = document.getElementById('submitBtn');
-
-    function validateImageFilename() {
-      const regId = regIdInput.value.trim();
-      const file = imageInput.files[0];
-      if (!regId || !file) {
-        imageError.classList.add('hidden');
-        submitBtn.disabled = true;
-        return;
-      }
-
-      const expected = `${regId.toUpperCase()}.jpg`;
-      const actual = file.name;
-
-      if (actual === expected) {
-        imageError.classList.add('hidden');
-        submitBtn.disabled = false;
-      } else {
-        imageError.classList.remove('hidden');
-        submitBtn.disabled = true;
-      }
-    }
-
-    regIdInput.addEventListener('input', validateImageFilename);
-    imageInput.addEventListener('change', validateImageFilename);
-  });
-</script>

@@ -17,24 +17,25 @@ admin_bp = Blueprint('admin_bp', __name__)
 @admin_bp.route('/data')
 @login_required
 def data():
-    """
-    Render the admin dashboard (data.html) if the user is an admin.
-    """
     if current_user.role == 'admin':
         return render_template('admin/data.html', active_tab='employee')
     return 'Unauthorized Access'
 
-# NEW: Weekly Attendance Route
-@admin_bp.route('/weekly')
+# -- Weekly Attendance Tab --
+@admin_bp.route('/weekly_attendance')
 @login_required
 def weekly_attendance():
-    return render_template('admin/tabs/weekly_attendance.html', active_tab='weekly')
+    if current_user.role == 'admin':
+        return render_template('admin/data.html', active_tab='weekly')
+    return 'Unauthorized Access'
 
-# NEW: Custom Query Route
+# -- Custom Query Tab --
 @admin_bp.route('/query')
 @login_required
 def custom_query():
-    return render_template('admin/tabs/custom_query.html', active_tab='query')
+    if current_user.role == 'admin':
+        return render_template('admin/data.html', active_tab='query')
+    return 'Unauthorized Access'
 
 # -- Add User Route --
 @admin_bp.route('/add_user', methods=['POST'])

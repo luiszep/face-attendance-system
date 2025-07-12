@@ -1,0 +1,109 @@
+<div class="w-[260px] h-full bg-white flex flex-col px-4 pt-4 pb-4">
+    <!-- 🔍 Fixed search input (top section) -->
+    <div class="shrink-0 mb-4">
+        <input
+        type="text"
+        placeholder="Search employees..."
+        oninput="handleSearchInput(event)"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-800 placeholder-gray-500 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-pink-400"
+      />
+    </div>
+  
+    <!-- 📜 Scrollable list area -->
+    <div class="flex-1 overflow-y-auto scrollbar-hide flex flex-col space-y-3" id="employeeList">
+        {% for employee in employees %}
+            <button
+            data-employee-id="{{ employee.id }}"
+            onclick="selectEmployee('{{ employee.id }}')"
+            class="w-full px-4 py-2 text-left rounded-md border border-black bg-gray-100 text-gray-800 hover:bg-pink-100 transition-all"
+            >
+            {{ employee.full_name }}
+            </button>
+        {% endfor %}
+        
+        {% if not employees %}
+            <p
+            class="text-sm text-gray-400 italic mt-4 text-center"
+            id="noEmployeesMsg"
+            >
+            No employees found.
+            </p>
+        {% endif %}
+    </div>
+  
+    <!-- ➕ Create Button -->
+    <div class="mt-4 shrink-0" id="createEmployeeWrapper">
+      <button
+        onclick="addMockEmployee()"
+        class="w-full py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-md"
+      >
+        + Add Employee
+      </button>
+    </div>
+  </div>
+  
+  <script>
+    let selectedEmployeeId = null;
+
+    function handleSearchInput(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const list = document.getElementById('employeeList');
+        const buttons = list.querySelectorAll('button');
+        const createButtonWrapper = document.getElementById('createEmployeeWrapper');
+        const noMsg = document.getElementById('noEmployeesMsg');
+
+        let anyVisible = false;
+        buttons.forEach(btn => {
+        const text = btn.textContent.toLowerCase();
+        const matches = text.includes(searchTerm);
+        btn.style.display = matches ? 'block' : 'none';
+        if (matches) anyVisible = true;
+        });
+
+        if (noMsg) {
+        noMsg.style.display = anyVisible ? 'none' : 'block';
+        }
+
+        if (createButtonWrapper) {
+        createButtonWrapper.style.display = searchTerm ? 'none' : 'block';
+        }
+    }
+  
+    function selectEmployee(id) {
+        selectedEmployeeId = id;
+
+        const buttons = document.querySelectorAll('[data-employee-id]');
+        buttons.forEach(btn => {
+            const btnId = btn.getAttribute('data-employee-id');
+            if (btnId === id) {
+            btn.classList.remove('bg-gray-100', 'text-gray-800');
+            btn.classList.add('bg-pink-500', 'text-white', 'font-semibold');
+            } else {
+            btn.classList.remove('bg-pink-500', 'text-white', 'font-semibold');
+            btn.classList.add('bg-gray-100', 'text-gray-800');
+            }
+        });
+
+        // Optional: UI feedback
+        console.log("Selected employee ID:", id);
+    }
+  
+    function addMockEmployee() {
+      const list = document.getElementById('employeeList');
+      const noMsg = document.getElementById('noEmployeesMsg');
+      if (noMsg) noMsg.remove();
+  
+      const id = `mock-${Date.now()}`;
+      const name = `New Employee ${list.querySelectorAll('button').length + 1}`;
+  
+      const btn = document.createElement('button');
+      btn.className = "w-full px-4 py-2 text-left rounded-md border border-black bg-gray-100 text-gray-800 hover:bg-pink-100 transition-all";
+      btn.textContent = name;  
+      btn.onclick = () => selectEmployee(id);
+      list.appendChild(btn);
+
+      // Select it immediately
+      selectEmployee(id);
+    }
+  </script>
+  
