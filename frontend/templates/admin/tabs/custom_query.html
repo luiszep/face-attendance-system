@@ -1,0 +1,62 @@
+<!-- Tab Content: Custom Query -->
+<div id="custom-query" class="tab-content bg-white p-8 rounded-xl shadow text-gray-900">
+    <h2 class="text-2xl font-bold mb-6 text-center">Custom Query</h2>
+  
+    <p class="text-center text-gray-600 mb-6">
+      This section will allow advanced filtering and querying of employee attendance and payroll records.
+    </p>
+  
+    <!-- Placeholder Form -->
+    <form class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div>
+        <label for="employee_name" class="block text-sm font-medium mb-1">Employee Name</label>
+        <input type="text" id="employee_name" name="employee_name" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="e.g., John Doe" />
+      </div>
+      <div>
+        <label for="date_range" class="block text-sm font-medium mb-1">Date Range</label>
+        <input type="text" id="date_range" name="date_range" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="e.g., 2025-07-01 to 2025-07-10" />
+      </div>
+      <div class="md:col-span-2 text-center">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold">
+          Run Query
+        </button>
+      </div>
+    </form>
+  
+    <!-- Placeholder Results -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2 font-medium text-gray-700">Date</th>
+            <th class="px-4 py-2 font-medium text-gray-700">Employee</th>
+            <th class="px-4 py-2 font-medium text-gray-700">Clock In</th>
+            <th class="px-4 py-2 font-medium text-gray-700">Clock Out</th>
+            <th class="px-4 py-2 font-medium text-gray-700">Hours Worked</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <!-- Example rows -->
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2">2025-07-10</td>
+            <td class="px-4 py-2">John Doe</td>
+            <td class="px-4 py-2">08:05</td>
+            <td class="px-4 py-2">17:15</td>
+            <td class="px-4 py-2">9.2</td>
+          </tr>
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2">2025-07-09</td>
+            <td class="px-4 py-2">Jane Smith</td>
+            <td class="px-4 py-2">09:00</td>
+            <td class="px-4 py-2">17:00</td>
+            <td class="px-4 py-2">8.0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  
+    <div class="mt-6 text-center text-gray-500 text-sm">
+      Query results shown here are placeholder data. Query logic will be added soon.
+    </div>
+  </div>
+  

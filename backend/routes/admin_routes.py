@@ -21,20 +21,20 @@ def data():
     Render the admin dashboard (data.html) if the user is an admin.
     """
     if current_user.role == 'admin':
-        return render_template('data.html')
+        return render_template('admin/data.html', active_tab='employee')
     return 'Unauthorized Access'
 
 # NEW: Weekly Attendance Route
 @admin_bp.route('/weekly')
 @login_required
 def weekly_attendance():
-    return render_template('weekly.html', active_tab='weekly')
+    return render_template('admin/tabs/weekly_attendance.html', active_tab='weekly')
 
 # NEW: Custom Query Route
 @admin_bp.route('/query')
 @login_required
 def custom_query():
-    return render_template('custom_query.html', active_tab='query')
+    return render_template('admin/tabs/custom_query.html', active_tab='query')
 
 # -- Add User Route --
 @admin_bp.route('/add_user', methods=['POST'])
@@ -106,7 +106,7 @@ def add_user():
         db.session.add(user)
         db.session.commit()
         flash('Student added successfully!', 'success')
-        return render_template('data.html', error='Student added successfully!')
+        return render_template('admin/data.html', error='Student added successfully!')
     flash('Invalid file extension. Allowed extensions are: png, jpg, jpeg, gif', 'error')
     return redirect(request.url)
 

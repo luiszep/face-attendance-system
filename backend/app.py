@@ -253,7 +253,7 @@ def generate_encodings():
             flash("Error occurred while generating encodings.", "error")
         return redirect(url_for('admin_bp.data'))
     # --- Render page for GET request ---
-    return render_template('data.html')
+    return render_template('admin/data.html')
 
 # --- Index Route ---
 @app.route('/')
