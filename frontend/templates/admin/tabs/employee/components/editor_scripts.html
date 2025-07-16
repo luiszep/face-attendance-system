@@ -1,0 +1,87 @@
+<script>
+    let isEditingTitle = false;
+    let employeeTitle = "Add Employee";
+  
+    function startEditingTitle() {
+      if (isEditingTitle) return;
+  
+      isEditingTitle = true;
+  
+      const input = document.getElementById("employeeTitleInput");
+      const display = document.getElementById("employeeTitleDisplay");
+  
+      input.value = employeeTitle;
+      display.classList.add("hidden");
+      input.classList.remove("hidden");
+  
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 50);
+    }
+  
+    function saveTitle() {
+      const input = document.getElementById("employeeTitleInput");
+      const display = document.getElementById("employeeTitleDisplay");
+  
+      employeeTitle = input.value.trim() || `${document.getElementById('first_name').value || 'Unnamed'} ${document.getElementById('last_name').value || ''}`;
+      display.textContent = employeeTitle;
+  
+      input.classList.add("hidden");
+      display.classList.remove("hidden");
+  
+      isEditingTitle = false;
+    }
+
+    const MAX_DESC_LEN = 500;
+    const selectedDays = [];
+
+    function toggleDay(button) {
+        const day = button.getAttribute('data-day');
+        const idx = selectedDays.indexOf(day);
+
+        if (idx >= 0) {
+        selectedDays.splice(idx, 1);
+        button.classList.remove('bg-pink-500', 'text-white');
+        button.classList.add('bg-pink-100', 'text-pink-600');
+        } else {
+        selectedDays.push(day);
+        button.classList.remove('bg-pink-100', 'text-pink-600');
+        button.classList.add('bg-pink-500', 'text-white');
+        }
+    }
+
+    function updateDescription() {
+        const textarea = document.getElementById('description');
+        const counter = document.getElementById('descCount');
+        const val = textarea.value.trim();
+        counter.textContent = val.length + ' / ' + MAX_DESC_LEN;
+
+        if (val.length > MAX_DESC_LEN - 50) {
+        counter.classList.remove('text-gray-500');
+        counter.classList.add('text-red-500');
+        } else {
+        counter.classList.remove('text-red-500');
+        counter.classList.add('text-gray-500');
+        }
+    }
+
+    function validateTime() {
+        const start = document.getElementById('startTime').value;
+        const end = document.getElementById('endTime').value;
+        const errorEl = document.getElementById('timeError');
+
+        if (end !== 'N/A' && start >= end) {
+        errorEl.classList.remove('hidden');
+        } else {
+        errorEl.classList.add('hidden');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('startTime').addEventListener('change', validateTime);
+        document.getElementById('endTime').addEventListener('change', validateTime);
+    });
+</script>
+
+  
