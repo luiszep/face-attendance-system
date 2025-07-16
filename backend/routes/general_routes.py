@@ -240,7 +240,7 @@ def edit_employee():
 
     if not employee:
         flash("Employee not found.", "error")
-        return redirect(url_for('general_bp.images'))
+        return redirect(url_for('admin_bp.data', active_tab='employee'))
 
     if request.method == 'POST':
         employee.first_name = request.form.get('first_name')
@@ -254,7 +254,7 @@ def edit_employee():
 
         db.session.commit()
         flash('Employee updated successfully!', 'success')
-        return redirect(url_for('general_bp.images'))
+        return redirect(url_for('admin_bp.data', active_tab='employee'))
 
     return render_template('edit_employee.html', employee=employee)
 

@@ -13,13 +13,50 @@ import logging
 # Define the admin blueprint
 admin_bp = Blueprint('admin_bp', __name__)
 
-# -- Admin Dashboard Route --
 @admin_bp.route('/data')
 @login_required
 def data():
-    if current_user.role == 'admin':
-        return render_template('admin/data.html', active_tab='employee')
-    return 'Unauthorized Access'
+    if current_user.role != 'admin':
+        return 'Unauthorized Access'
+
+    session_id = session.get('session_code_id')
+    if not session_id:
+        flash("Session expired or unauthorized access.", "error")
+        return redirect(url_for('auth_bp.login'))
+
+    from backend.utils.s3_utils import get_image_urls_for_session
+    from backend.models import Student_data  # already at top
+
+    # Get raw image metadata (filename + presigned URL)
+    image_entries = get_image_urls_for_session(session_id)
+
+    # Match each image to an employee by regid (from filename)
+    images = []
+    for entry in image_entries:
+        regid = entry['filename'].rsplit('.', 1)[0].upper()
+        employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
+        images.append({
+            'filename': entry['filename'],
+            'url': entry['url'],
+            'employee': employee
+        })
+
+    # NEW: If an edit_regid is passed, fetch the corresponding employee
+    edit_regid = request.args.get("edit_regid")
+    employee_to_edit = None
+    if edit_regid:
+        employee_to_edit = Student_data.query.filter_by(
+            regid=edit_regid.upper(),
+            session_code_id=session_id
+        ).first()
+
+    return render_template(
+        'admin/data.html',
+        active_tab='employee',
+        images=images,
+        image_no=len(images),
+        employee=employee_to_edit  # <-- Pass this into the template
+    )
 
 # -- Weekly Attendance Tab --
 @admin_bp.route('/weekly_attendance')

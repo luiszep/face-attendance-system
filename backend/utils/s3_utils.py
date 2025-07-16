@@ -159,3 +159,25 @@ def delete_file(s3_key):
     except Exception as e:
         print(f"[S3 Error] Failed to delete {s3_key}: {e}")
         return False
+
+
+def get_image_urls_for_session(session_id):
+    """
+    Lists all image files in the uploads/<session_id>/ folder,
+    generates presigned URLs, and returns list of dictionaries.
+    """
+    prefix = f"uploads/{session_id}"
+    files = list_files_in_folder(prefix)
+    image_list = []
+
+    for filename in files:
+        s3_key = f"{prefix}/{filename}"
+        url = generate_presigned_url(s3_key)
+        image_list.append({
+            'filename': filename,
+            'url': url,
+            'key': s3_key
+        })
+
+    return image_list
+
