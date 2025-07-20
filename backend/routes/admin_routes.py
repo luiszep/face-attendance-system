@@ -144,7 +144,7 @@ def add_user():
         db.session.add(user)
         db.session.commit()
         flash('Student added successfully!', 'success')
-        return render_template('admin/data.html', error='Student added successfully!')
+        return redirect(url_for('admin_bp.data'))
     flash('Invalid file extension. Allowed extensions are: png, jpg, jpeg, gif', 'error')
     return redirect(request.url)
 

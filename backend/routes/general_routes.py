@@ -166,46 +166,6 @@ def get_attendance():
             return str(e)
     return 'Unauthorized access'
 
-# -- Admin Image Gallery Route --
-@general_bp.route('/images') 
-@login_required
-def images():
-    if 'session_code_id' not in session:
-        flash('Session expired or unauthorized access.', 'error')
-        return redirect(url_for('auth_bp.login'))
-
-    if current_user.role == 'admin':
-        from backend.utils.s3_utils import list_files_in_folder, generate_presigned_url
-
-        session_id = str(session['session_code_id'])
-        s3_prefix = f"{current_app.config['UPLOAD_FOLDER']}/{session_id}"
-        image_keys = list_files_in_folder(s3_prefix)
-        image_no = len(image_keys)
-        print(f"No of images: {image_no}")
-
-        employees = Student_data.query.filter_by(session_code_id=session_id).all()
-        emp_lookup = {emp.regid.upper() + '.JPG': emp for emp in employees}
-
-        images = []
-        for filename in image_keys:
-            full_key = f"{s3_prefix}/{filename}"
-            url = generate_presigned_url(full_key)
-            matched_emp = emp_lookup.get(filename.upper())
-            images.append({
-                'filename': filename,
-                'url': url,
-                'employee': matched_emp
-            })
-
-        return render_template(
-            'image_gallery.html',
-            images=images,
-            image_no=image_no
-        )
-
-    return 'Unauthorized access'
-
-
 # -- Serve Uploaded Image Securely --
 @general_bp.route('/uploads/<folder>/<filename>')
 @login_required
@@ -227,13 +187,13 @@ def get_image(folder, filename):
 
 
 # -- Admin Edit Employee Route --
-@general_bp.route('/edit_employee', methods=['GET', 'POST'])
+@general_bp.route('/edit_employee', methods=['POST'])
 @login_required
 def edit_employee():
     if current_user.role != 'admin':
         return "Unauthorized access", 403
 
-    regid = request.args.get('regid') if request.method == 'GET' else request.form.get('regid')
+    regid = request.form.get('regid')
     session_id = session.get('session_code_id')
 
     employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
@@ -242,21 +202,20 @@ def edit_employee():
         flash("Employee not found.", "error")
         return redirect(url_for('admin_bp.data', active_tab='employee'))
 
-    if request.method == 'POST':
-        employee.first_name = request.form.get('first_name')
-        employee.last_name = request.form.get('last_name')
-        employee.occupation = request.form.get('occupation')
-        employee.regular_wage = float(request.form.get('regular_wage'))
-        employee.overtime_wage = float(request.form.get('overtime_wage'))
-        employee.regular_hours = int(request.form.get('regular_hours'))
-        max_ot = request.form.get('maximum_overtime_hours')
-        employee.maximum_overtime_hours = int(max_ot) if max_ot else None
+    # Update fields
+    employee.first_name = request.form.get('first_name')
+    employee.last_name = request.form.get('last_name')
+    employee.occupation = request.form.get('occupation')
+    employee.regular_wage = float(request.form.get('regular_wage'))
+    employee.overtime_wage = float(request.form.get('overtime_wage'))
+    employee.regular_hours = int(request.form.get('regular_hours'))
+    max_ot = request.form.get('maximum_overtime_hours')
+    employee.maximum_overtime_hours = int(max_ot) if max_ot else None
 
-        db.session.commit()
-        flash('Employee updated successfully!', 'success')
-        return redirect(url_for('admin_bp.data', active_tab='employee'))
+    db.session.commit()
+    flash('Employee updated successfully!', 'success')
+    return redirect(url_for('admin_bp.data', active_tab='employee'))
 
-    return render_template('edit_employee.html', employee=employee)
 
 # -- Admin Delete Employee Route --
 @general_bp.route('/delete_employee', methods=['POST'])
@@ -270,7 +229,7 @@ def delete_employee():
 
     if not regid or not session_id:
         flash("Missing data for deletion.", "error")
-        return redirect(url_for('general_bp.images'))
+        return redirect(url_for('admin_bp.data', active_tab='employee'))
 
     # Step 1: Delete employee record
     employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
@@ -280,7 +239,8 @@ def delete_employee():
         flash(f"Deleted employee {regid} from database.", "info")
     else:
         flash("Employee not found.", "error")
-        return redirect(url_for('general_bp.images'))
+        return redirect(url_for('admin_bp.data', active_tab='employee'))
+
 
     # Step 2: Delete image from S3
     from backend.utils.s3_utils import delete_file
@@ -292,4 +252,5 @@ def delete_employee():
     else:
         flash("Failed to delete image file from S3.", "warning")
 
-    return redirect(url_for('general_bp.images'))
+    return redirect(url_for('admin_bp.data', active_tab='employee'))
+
