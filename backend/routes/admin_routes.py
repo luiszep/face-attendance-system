@@ -24,6 +24,10 @@ def data():
         flash("Session expired or unauthorized access.", "error")
         return redirect(url_for('auth_bp.login'))
 
+    # Get business name from session code
+    session_code_obj = SessionCode.query.get(session_id)
+    business_name = session_code_obj.business_name if session_code_obj else "Unknown Business"
+
     from backend.utils.s3_utils import get_image_urls_for_session
     from backend.models import Student_data  # already at top
 
@@ -67,7 +71,8 @@ def data():
         images=images,
         image_no=len(images),
         employee=employee_to_edit,
-        employees=employees  # ✅ Now passed to employee_sidebar.html
+        employees=employees,  # ✅ Now passed to employee_sidebar.html
+        business_name=business_name  # ✅ Pass business name to template
     )
 
 
@@ -76,7 +81,10 @@ def data():
 @login_required
 def weekly_attendance():
     if current_user.role == 'admin':
-        return render_template('admin/data.html', active_tab='weekly')
+        session_id = session.get('session_code_id')
+        session_code_obj = SessionCode.query.get(session_id) if session_id else None
+        business_name = session_code_obj.business_name if session_code_obj else "Unknown Business"
+        return render_template('admin/data.html', active_tab='weekly', business_name=business_name)
     return 'Unauthorized Access'
 
 # -- Custom Query Tab --
@@ -84,7 +92,10 @@ def weekly_attendance():
 @login_required
 def custom_query():
     if current_user.role == 'admin':
-        return render_template('admin/data.html', active_tab='query')
+        session_id = session.get('session_code_id')
+        session_code_obj = SessionCode.query.get(session_id) if session_id else None
+        business_name = session_code_obj.business_name if session_code_obj else "Unknown Business"
+        return render_template('admin/data.html', active_tab='query', business_name=business_name)
     return 'Unauthorized Access'
 
 # -- Add User Route --

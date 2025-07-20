@@ -34,7 +34,7 @@
     <header class="w-full bg-black border-b border-white/10 text-white px-8 py-4 flex justify-between items-center shadow shrink-0">
       <div class="text-2xl font-bold text-green-500">The Agora Company</div>
       <div class="flex items-center space-x-4">
-        <span class="bg-gray-800 bg-opacity-50 px-4 py-2 rounded-full font-mono text-sm border border-green-500/30">ID: {{ current_user.id }}</span>
+        <span class="bg-gray-800 bg-opacity-50 px-4 py-2 rounded-full text-sm border border-green-500/30">{{ business_name or "Unknown Business" }}</span>
         <form action="{{ url_for('auth_bp.logout') }}" method="post" class="inline">
           <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-semibold shadow-lg transition duration-300">
             Logout
