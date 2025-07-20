@@ -4,9 +4,6 @@
     <!-- Scrollable Main Content Area -->
     <div class="flex-1 overflow-y-auto space-y-6 scrollbar-hide px-4 pt-4 pb-20">
       <div class="w-full max-w-5xl mx-auto">
-        <!-- Editable Title Component -->
-        {% include "admin/tabs/employee/components/editable_title.html" %}
-
         <!-- Alert / Flash Messages -->
         {% with messages = get_flashed_messages() %}
           {% if messages %}
@@ -18,44 +15,16 @@
           {% endif %}
         {% endwith %}
   
-        <!-- Employee Form -->
-        {% include "admin/tabs/employee/components/employee_form.html" %}
-
-        <!-- Employee Gallery Panel -->
-        <div class="bg-white rounded-lg shadow-sm pt-3 px-6 pb-6 mb-6">
-            <h2 class="text-lg font-semibold mb-4">Uploaded Employees</h2>
-            {% include "admin/tabs/employee/components/image_gallery_grid.html" %}
-        </div>  
-
-        <!-- Edit Employee Form -->
-        <div id="employee-form-container" class="p-4 bg-white rounded-lg shadow-md">
-            {% if employee %}
-              <h2 class="text-xl font-bold text-gray-800 mb-4">Edit Employee: {{ employee.first_name }}</h2>
-              {% include 'admin/tabs/employee/components/edit_employee_form.html' %}
-            {% else %}
-              <p class="text-gray-500">Select an employee to begin editing.</p>
-            {% endif %}
-        </div>
-          
-
-        <!-- Employee Schedule & Description Panel -->
-        {% include "admin/tabs/employee/components/schedule_panel.html" %}
-
-        <!-- Image Gallery Link -->
-        <div class="mt-4 text-center">
-          <a href="/Attendance_system/images" onclick="reloadPage()" class="text-blue-600 underline hover:text-blue-800 text-sm">View Uploaded Images</a>
-        </div>
-  
-        <!-- Delete Button (optional for future integration) -->
-        <div class="mt-8">
-          <button
-            type="button"
-            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-md transition-all"
-            onclick="alert('Delete logic goes here')"
-          >
-            Delete Employee 🗑️
-          </button>
-        </div>
+        {% if request.args.get('add_new') %}
+          <!-- Employee Form (Add New) - Only show this when add_new parameter is present -->
+          {% include "admin/tabs/employee/components/employee_form.html" %}
+        {% elif request.args.get('edit_regid') %}
+          <!-- Individual Employee View - Only show when editing specific employee -->
+          {% include "admin/tabs/employee/components/image_gallery_grid.html" %}
+        {% else %}
+          <!-- Default Database Overview - Show when no specific action is selected -->
+          {% include "admin/tabs/employee/components/employee_database_overview.html" %}
+        {% endif %}
       </div>
     </div>
   </div>

@@ -1,52 +1,357 @@
-<!-- Image Gallery Grid (Migrated from image_gallery.html) -->
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
-    {% for image in images %}
-    <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg overflow-hidden shadow-md p-4">
-      <img src="{{ image.url }}" alt="{{ image.filename }}" class="rounded-md w-full object-cover max-h-80 mx-auto mb-2">
-      {% if image.employee %}
-      <h2 class="text-lg font-bold text-blue-100">{{ image.employee.first_name }} {{ image.employee.last_name }}</h2>
-      <p class="text-sm text-gray-300">{{ image.employee.occupation }}</p>
-      <p class="text-sm">Reg Wage: ${{ image.employee.regular_wage }}</p>
-      <p class="text-sm">OT Wage: ${{ image.employee.overtime_wage }}</p>
-      <p class="text-sm">Hours/Day: {{ image.employee.regular_hours }}</p>
-      {% if image.employee.maximum_overtime_hours %}
-        <p class="text-sm">Max OT: {{ image.employee.maximum_overtime_hours }}</p>
-      {% endif %}
-      <p class="text-xs text-gray-400 mt-1">RegID: {{ image.employee.regid }}</p>
+<!-- Modern Employee Profile Card -->
+{% if images %}
+  {% set image = images[0] %}
+  {% if image.employee %}
+    <!-- Professional Employee ID Card -->
+    <div class="max-w-5xl mx-auto bg-gray-900 rounded-2xl shadow-2xl overflow-hidden mb-8 border-4 border-green-400 neon-border">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-green-600 to-green-700 px-8 py-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="bg-white/20 rounded-full p-2">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold text-white">{{ image.employee.first_name }} {{ image.employee.last_name }}</h2>
+              <p class="text-blue-100">Employee ID: {{ image.employee.regid }}</p>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex space-x-3">
+            <!-- Edit Mode Toggle -->
+            <button type="button" id="editToggleBtn" onclick="toggleEditMode()" class="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+              <span id="editBtnText">Edit</span>
+            </button>
+            
+            <!-- Save/Cancel Buttons (Hidden by default) -->
+            <div id="editActions" class="hidden space-x-3">
+              <button type="button" onclick="cancelEdit()" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cancel
+              </button>
+              <button type="button" onclick="saveChanges()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Save Changes
+              </button>
+            </div>
+            
+            <!-- Delete Button -->
+            <form method="POST" action="{{ url_for('general_bp.delete_employee') }}" class="inline" onsubmit="return confirm('Are you sure you want to delete {{ image.employee.first_name }} {{ image.employee.last_name }}?');">
+              <input type="hidden" name="regid" value="{{ image.employee.regid }}">
+              <button type="submit" id="deleteBtn" class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                Delete
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
 
-      <form method="GET" action="{{ url_for('admin_bp.data') }}">
-        <input type="hidden" name="edit_regid" value="{{ image.employee.regid }}">
-        <button type="submit"
-                class="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold text-sm px-4 py-1 rounded-md transition">
-          Edit
-        </button>
-      </form>
-      
-      <form method="POST" action="{{ url_for('general_bp.delete_employee') }}" onsubmit="return confirm('Are you sure you want to delete this employee?');">
-        <input type="hidden" name="regid" value="{{ image.employee.regid }}">
-        <button type="submit" class="mt-2 bg-red-500 hover:bg-red-600 text-white font-semibold text-sm px-4 py-1 rounded-md transition">
-          Delete
-        </button>
-      </form>
-  
-      {% else %}
-      <p class="text-red-300 text-sm italic mt-2">No matching employee record.</p>
-      {% endif %}
+      <!-- Employee Details -->
+      <div class="p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Photo Section -->
+          <div class="lg:col-span-1">
+            <div class="bg-gray-800 rounded-xl shadow-lg border border-green-500/20 p-6">
+              <h3 class="text-lg font-semibold text-white mb-4 text-center">Employee Photo</h3>
+              <div class="relative">
+                <img src="{{ image.url }}" alt="{{ image.employee.first_name }} {{ image.employee.last_name }}" 
+                     class="w-full h-64 object-cover rounded-lg border-2 border-gray-200 shadow-sm">
+                <div class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                  Active
+                </div>
+              </div>
+              
+              <!-- Quick Stats -->
+              <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div class="text-center">
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Employee Since</p>
+                  <p class="text-sm font-semibold text-white">System Registration</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Information Section -->
+          <div class="lg:col-span-2">
+            <div class="space-y-6">
+              
+              <!-- Personal Information -->
+              <div class="bg-gray-800 rounded-xl shadow-lg border border-green-500/20 p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                  <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                  Personal Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">First Name</label>
+                      <p id="firstNameDisplay" class="text-lg font-semibold text-white">{{ image.employee.first_name }}</p>
+                      <input type="text" id="firstNameEdit" value="{{ image.employee.first_name }}" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
+                      <p id="lastNameDisplay" class="text-lg font-semibold text-white">{{ image.employee.last_name }}</p>
+                      <input type="text" id="lastNameEdit" value="{{ image.employee.last_name }}" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Job Title</label>
+                      <p id="occupationDisplay" class="text-lg font-semibold text-white">{{ image.employee.occupation }}</p>
+                      <input type="text" id="occupationEdit" value="{{ image.employee.occupation }}" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                    </div>
+                  </div>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Employee ID</label>
+                      <p class="text-lg font-semibold text-white font-mono">{{ image.employee.regid }}</p>
+                      <p class="text-xs text-gray-500 mt-1">ID cannot be changed</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Compensation Details -->
+              <div class="bg-gray-800 rounded-xl shadow-lg border border-green-500/20 p-6">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                  <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                  </svg>
+                  Compensation & Schedule
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Regular Rate</label>
+                      <p id="regularWageDisplay" class="text-2xl font-bold text-green-600">${{ "%.2f"|format(image.employee.regular_wage) }}/hr</p>
+                      <div class="hidden relative" id="regularWageEditContainer">
+                        <span class="absolute left-3 top-3 text-gray-500">$</span>
+                        <input type="number" step="0.01" id="regularWageEdit" value="{{ image.employee.regular_wage }}" class="w-full pl-8 pr-4 py-3 border border-green-500/30 rounded-lg text-xl font-bold bg-gray-700 text-green-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <span class="absolute right-3 top-3 text-gray-500">/hr</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Regular Hours/Day</label>
+                      <p id="regularHoursDisplay" class="text-lg font-semibold text-white">{{ image.employee.regular_hours }} hours</p>
+                      <div class="hidden relative" id="regularHoursEditContainer">
+                        <input type="number" id="regularHoursEdit" value="{{ image.employee.regular_hours }}" class="w-full pr-16 py-3 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <span class="absolute right-3 top-3 text-gray-500">hours</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Overtime Rate</label>
+                      <p id="overtimeWageDisplay" class="text-2xl font-bold text-amber-600">${{ "%.2f"|format(image.employee.overtime_wage) }}/hr</p>
+                      <div class="hidden relative" id="overtimeWageEditContainer">
+                        <span class="absolute left-3 top-3 text-gray-500">$</span>
+                        <input type="number" step="0.01" id="overtimeWageEdit" value="{{ image.employee.overtime_wage }}" class="w-full pl-8 pr-4 py-3 border border-green-500/30 rounded-lg text-xl font-bold bg-gray-700 text-amber-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <span class="absolute right-3 top-3 text-gray-500">/hr</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Max OT Hours/Day</label>
+                      <p id="maxOvertimeDisplay" class="text-lg font-semibold text-white">{% if image.employee.maximum_overtime_hours %}{{ image.employee.maximum_overtime_hours }} hours{% else %}Not set{% endif %}</p>
+                      <div class="hidden relative" id="maxOvertimeEditContainer">
+                        <input type="number" id="maxOvertimeEdit" value="{{ image.employee.maximum_overtime_hours or '' }}" placeholder="Optional" class="w-full pr-16 py-3 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <span class="absolute right-3 top-3 text-gray-500">hours</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    {% endfor %}
+  {% else %}
+    <!-- No Employee Record Found -->
+    <div class="max-w-2xl mx-auto bg-gray-800 rounded-xl shadow-lg border border-green-500/20 p-8 text-center">
+      <div class="text-red-400 mb-4">
+        <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold text-white mb-2">Employee Record Not Found</h3>
+      <p class="text-gray-600">This image does not have a matching employee record in the system.</p>
+    </div>
+  {% endif %}
+{% else %}
+  <!-- No Employee Selected -->
+  <div class="max-w-2xl mx-auto bg-gray-800 rounded-xl shadow-lg border border-green-500/20 p-8 text-center">
+    <div class="text-gray-400 mb-4">
+      <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+    </div>
+    <h3 class="text-lg font-semibold text-white mb-2">No Employee Selected</h3>
+    <p class="text-gray-600">Select an employee from the sidebar to view their profile.</p>
   </div>
+{% endif %}
+
+
+<!-- Hidden Form for Edit Submission -->
+<form id="editEmployeeForm" method="POST" action="{{ url_for('general_bp.edit_employee') }}" style="display: none;">
+  <input type="hidden" name="regid" value="{{ image.employee.regid }}">
+  <input type="hidden" name="first_name" id="hiddenFirstName">
+  <input type="hidden" name="last_name" id="hiddenLastName">
+  <input type="hidden" name="occupation" id="hiddenOccupation">
+  <input type="hidden" name="regular_wage" id="hiddenRegularWage">
+  <input type="hidden" name="overtime_wage" id="hiddenOvertimeWage">
+  <input type="hidden" name="regular_hours" id="hiddenRegularHours">
+  <input type="hidden" name="maximum_overtime_hours" id="hiddenMaxOvertime">
+</form>
+
+<script>
+let isEditMode = false;
+let originalValues = {};
+
+function toggleEditMode() {
+  isEditMode = !isEditMode;
   
-  <!-- Footer Controls: Image Count + Generate Button -->
-  <div class="text-center text-gray-700 text-sm font-medium mb-6">
-    No of images are: <span class="font-bold text-black">{{ image_no }}</span>
-  </div>
+  if (isEditMode) {
+    enterEditMode();
+  } else {
+    exitEditMode();
+  }
+}
+
+function enterEditMode() {
+  // Store original values
+  originalValues = {
+    firstName: document.getElementById('firstNameEdit').value,
+    lastName: document.getElementById('lastNameEdit').value,
+    occupation: document.getElementById('occupationEdit').value,
+    regularWage: document.getElementById('regularWageEdit').value,
+    overtimeWage: document.getElementById('overtimeWageEdit').value,
+    regularHours: document.getElementById('regularHoursEdit').value,
+    maxOvertime: document.getElementById('maxOvertimeEdit').value
+  };
   
-  <div class="flex justify-center gap-4">
-    <form action="{{ url_for('generate_encodings') }}" method="post">
-      <button type="submit"
-        class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-md transition">
-        Generate
-      </button>
-    </form>
-  </div>
+  // Hide display elements and show edit elements
+  document.getElementById('firstNameDisplay').classList.add('hidden');
+  document.getElementById('firstNameEdit').classList.remove('hidden');
+  
+  document.getElementById('lastNameDisplay').classList.add('hidden');
+  document.getElementById('lastNameEdit').classList.remove('hidden');
+  
+  document.getElementById('occupationDisplay').classList.add('hidden');
+  document.getElementById('occupationEdit').classList.remove('hidden');
+  
+  document.getElementById('regularWageDisplay').classList.add('hidden');
+  document.getElementById('regularWageEditContainer').classList.remove('hidden');
+  
+  document.getElementById('overtimeWageDisplay').classList.add('hidden');
+  document.getElementById('overtimeWageEditContainer').classList.remove('hidden');
+  
+  document.getElementById('regularHoursDisplay').classList.add('hidden');
+  document.getElementById('regularHoursEditContainer').classList.remove('hidden');
+  
+  document.getElementById('maxOvertimeDisplay').classList.add('hidden');
+  document.getElementById('maxOvertimeEditContainer').classList.remove('hidden');
+  
+  // Update buttons
+  document.getElementById('editToggleBtn').classList.add('hidden');
+  document.getElementById('editActions').classList.remove('hidden');
+  document.getElementById('deleteBtn').classList.add('hidden');
+  
+  // Focus on first field
+  document.getElementById('firstNameEdit').focus();
+}
+
+function exitEditMode() {
+  // Show display elements and hide edit elements
+  document.getElementById('firstNameDisplay').classList.remove('hidden');
+  document.getElementById('firstNameEdit').classList.add('hidden');
+  
+  document.getElementById('lastNameDisplay').classList.remove('hidden');
+  document.getElementById('lastNameEdit').classList.add('hidden');
+  
+  document.getElementById('occupationDisplay').classList.remove('hidden');
+  document.getElementById('occupationEdit').classList.add('hidden');
+  
+  document.getElementById('regularWageDisplay').classList.remove('hidden');
+  document.getElementById('regularWageEditContainer').classList.add('hidden');
+  
+  document.getElementById('overtimeWageDisplay').classList.remove('hidden');
+  document.getElementById('overtimeWageEditContainer').classList.add('hidden');
+  
+  document.getElementById('regularHoursDisplay').classList.remove('hidden');
+  document.getElementById('regularHoursEditContainer').classList.add('hidden');
+  
+  document.getElementById('maxOvertimeDisplay').classList.remove('hidden');
+  document.getElementById('maxOvertimeEditContainer').classList.add('hidden');
+  
+  // Update buttons
+  document.getElementById('editToggleBtn').classList.remove('hidden');
+  document.getElementById('editActions').classList.add('hidden');
+  document.getElementById('deleteBtn').classList.remove('hidden');
+}
+
+function cancelEdit() {
+  // Restore original values
+  document.getElementById('firstNameEdit').value = originalValues.firstName;
+  document.getElementById('lastNameEdit').value = originalValues.lastName;
+  document.getElementById('occupationEdit').value = originalValues.occupation;
+  document.getElementById('regularWageEdit').value = originalValues.regularWage;
+  document.getElementById('overtimeWageEdit').value = originalValues.overtimeWage;
+  document.getElementById('regularHoursEdit').value = originalValues.regularHours;
+  document.getElementById('maxOvertimeEdit').value = originalValues.maxOvertime;
+  
+  isEditMode = false;
+  exitEditMode();
+}
+
+function saveChanges() {
+  // Validate required fields
+  const firstName = document.getElementById('firstNameEdit').value.trim();
+  const lastName = document.getElementById('lastNameEdit').value.trim();
+  const occupation = document.getElementById('occupationEdit').value.trim();
+  const regularWage = document.getElementById('regularWageEdit').value;
+  const overtimeWage = document.getElementById('overtimeWageEdit').value;
+  const regularHours = document.getElementById('regularHoursEdit').value;
+  
+  if (!firstName || !lastName || !occupation || !regularWage || !overtimeWage || !regularHours) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+  
+  // Set values in hidden form
+  document.getElementById('hiddenFirstName').value = firstName;
+  document.getElementById('hiddenLastName').value = lastName;
+  document.getElementById('hiddenOccupation').value = occupation;
+  document.getElementById('hiddenRegularWage').value = regularWage;
+  document.getElementById('hiddenOvertimeWage').value = overtimeWage;
+  document.getElementById('hiddenRegularHours').value = regularHours;
+  document.getElementById('hiddenMaxOvertime').value = document.getElementById('maxOvertimeEdit').value;
+  
+  // Submit form
+  document.getElementById('editEmployeeForm').submit();
+}
+
+// Auto-calculate overtime rate
+document.getElementById('regularWageEdit').addEventListener('input', function() {
+  const regularWage = parseFloat(this.value);
+  const overtimeWageInput = document.getElementById('overtimeWageEdit');
+  
+  if (regularWage && !overtimeWageInput.value) {
+    overtimeWageInput.value = (regularWage * 1.5).toFixed(2);
+  }
+});
+</script>
   

@@ -1,0 +1,129 @@
+<!-- Employee Database Overview -->
+<div class="max-w-7xl mx-auto bg-gray-900 rounded-2xl shadow-2xl border-4 border-green-400 neon-border p-8 mt-6">
+  <!-- Header -->
+  <div class="mb-8 text-center">
+    <h1 class="text-4xl font-bold text-green-400 mb-4">Employee Database</h1>
+    <p class="text-gray-300 text-lg">Overview of all registered employees in the system</p>
+    <div class="mt-4 inline-flex items-center space-x-4 bg-gray-800 px-6 py-3 rounded-full border border-green-500/30 ">
+      <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+      </svg>
+      <span class="text-white font-semibold">Total Employees: {{ employees|length }}</span>
+    </div>
+  </div>
+
+  {% if employees %}
+    <!-- Employee Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      {% for employee in employees %}
+        <!-- Employee Card -->
+        <div class="bg-gray-800 rounded-xl shadow-lg border border-green-500/20 hover:border-green-400/50 transition-all duration-300 cursor-pointer transform hover:-translate-y-2 hover:shadow-xl  group"
+             onclick="selectEmployee('{{ employee.regid }}')">
+          
+          <!-- Employee Photo -->
+          <div class="relative">
+            {% set employee_image = images|selectattr('employee.regid', 'equalto', employee.regid)|first %}
+            {% if employee_image %}
+              <img src="{{ employee_image.url }}" 
+                   alt="{{ employee.first_name }} {{ employee.last_name }}" 
+                   class="w-full h-48 object-cover rounded-t-xl">
+            {% else %}
+              <div class="w-full h-48 bg-gray-700 bg-opacity-50 rounded-t-xl flex items-center justify-center">
+                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+            {% endif %}
+            
+            <!-- Status Badge -->
+            <div class="absolute top-2 right-2 bg-green-500 text-black text-xs px-2 py-1 rounded-full font-medium">
+              Active
+            </div>
+          </div>
+
+          <!-- Employee Info -->
+          <div class="p-4">
+            <h3 class="text-lg font-semibold text-white mb-1 group-hover:text-green-400 transition-colors">
+              {{ employee.first_name }} {{ employee.last_name }}
+            </h3>
+            <p class="text-gray-400 text-sm mb-2">{{ employee.occupation }}</p>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-500 font-mono">ID: {{ employee.regid }}</span>
+              <div class="text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <!-- Left: Action Buttons -->
+        <div class="text-center md:text-left">
+          <div class="space-y-4">
+            <button onclick="showAddEmployeeForm()" 
+                    class="inline-flex items-center px-6 py-3 bg-green-500 hover:bg-green-600 text-black font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 neon-border">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Add New Employee
+            </button>
+            
+            <form action="{{ url_for('generate_encodings') }}" method="post" class="inline-block ml-4">
+              <button type="submit" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Generate Encodings
+              </button>
+            </form>
+          </div>
+        </div>
+        
+        <!-- Right: Help Text -->
+        <div class="text-center md:text-right text-gray-400 text-sm space-y-2">
+          <p><strong>💡 Tips:</strong></p>
+          <p>• Click any employee card to view and edit details</p>
+          <p>• Generate encodings after adding new employees</p>
+          <p>• Encodings are required for facial recognition</p>
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-16">
+      <div class="bg-gray-800 rounded-2xl shadow-lg p-12 border border-green-500/20  max-w-md mx-auto">
+        <svg class="w-24 h-24 text-gray-400 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        </svg>
+        <h3 class="text-2xl font-bold text-white mb-4">No Employees Yet</h3>
+        <p class="text-gray-400 mb-8">Get started by adding your first employee to the database.</p>
+        <button onclick="showAddEmployeeForm()" 
+                class="inline-flex items-center px-8 py-4 bg-green-500 hover:bg-green-600 text-black font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 neon-border">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Add First Employee
+        </button>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function selectEmployee(regid) {
+  // Redirect to the employee detail view
+  window.location.href = "{{ url_for('admin_bp.data') }}?edit_regid=" + regid;
+}
+
+function showAddEmployeeForm() {
+  // Redirect to add new employee form
+  window.location.href = "{{ url_for('admin_bp.data') }}?add_new=true";
+}
+</script>

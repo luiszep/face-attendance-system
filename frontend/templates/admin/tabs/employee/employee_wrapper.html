@@ -1,12 +1,12 @@
 <!-- Employee Database Tab Layout -->
-<div id="employee-db" class="flex flex-1 h-full w-full overflow-hidden bg-gray-50">
+<div id="employee-db" class="flex flex-1 h-full w-full overflow-hidden">
     <!-- Sidebar -->
-    <div class="w-64 shrink-0 bg-white">
+    <div class="w-64 shrink-0 bg-gray-900 border-r border-green-500/30">
       {% include 'admin/tabs/employee/employee_sidebar.html' %}
     </div>
   
     <!-- Editor Panel -->
-    <div class="flex-1 bg-gray-50 p-4 overflow-y-auto scrollbar-hide">
+    <div class="flex-1 p-6 overflow-y-auto scrollbar-hide">
       {% include 'admin/tabs/employee/employee_editor_panel.html' %}
     </div>
   </div>

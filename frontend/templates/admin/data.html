@@ -3,22 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Employee Dashboard</title>
+  <title>AgoraAI - Employee Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .hero-bg {
+      background-image: url('/Attendance_system/static/images/background.png');
+      background-repeat: repeat;
+      background-position: center;
+      background-color: black;
+    }
+    .neon-border {
+      box-shadow: 0 0 16px 2px #22ff22, 0 0 32px 4px #22ff22;
+    }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
 </head>
 
-<body class="bg-white text-gray-900">
+<body class="hero-bg text-white font-sans">
 
   <!-- Full Page Layout (Matches React) -->
   <div class="flex flex-col h-screen w-full overflow-hidden">
 
     <!-- Top Header Bar (Fixed) -->
-    <header class="w-full bg-gray-900 text-white px-8 py-4 flex justify-between items-center shadow shrink-0">
-      <div class="text-2xl font-black tracking-tight">FACIAL RECOGNITION</div>
+    <header class="w-full bg-black border-b border-white/10 text-white px-8 py-4 flex justify-between items-center shadow shrink-0">
+      <div class="text-2xl font-bold text-green-500">The Agora Company</div>
       <div class="flex items-center space-x-4">
-        <span class="bg-gray-800 px-4 py-1 rounded-full font-mono text-sm">ID: {{ current_user.id }}</span>
+        <span class="bg-gray-800 bg-opacity-50 px-4 py-2 rounded-full font-mono text-sm border border-green-500/30">ID: {{ current_user.id }}</span>
         <form action="{{ url_for('auth_bp.logout') }}" method="post" class="inline">
-          <button class="bg-red-600 hover:bg-red-700 px-4 py-1 rounded-full font-semibold shadow transition">
+          <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full font-semibold shadow-lg transition duration-300">
             Logout
           </button>
         </form>
@@ -26,32 +44,32 @@
     </header>
 
     <!-- Tab Bar (Fixed) -->
-    <div class="w-full bg-white border-b border-gray-200 flex px-8 shrink-0">
+    <div class="w-full bg-gray-800 border-b border-green-500/30 flex px-8 shrink-0">
       <nav class="flex space-x-6 w-full">
         <a href="{{ url_for('admin_bp.data') }}"
            class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
            {% if active_tab == 'employee' %}
-             border-pink-500 text-pink-600
+             border-green-500 text-green-400
            {% else %}
-             border-transparent text-gray-500 hover:text-pink-400
+             border-transparent text-gray-300 hover:text-green-400
            {% endif %}">
           Employee Database
         </a>
         <a href="{{ url_for('admin_bp.weekly_attendance') }}"
            class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
            {% if active_tab == 'weekly' %}
-             border-pink-500 text-pink-600
+             border-green-500 text-green-400
            {% else %}
-             border-transparent text-gray-500 hover:text-pink-400
+             border-transparent text-gray-300 hover:text-green-400
            {% endif %}">
           Weekly Attendance
         </a>
         <a href="{{ url_for('admin_bp.custom_query') }}"
            class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
            {% if active_tab == 'query' %}
-             border-pink-500 text-pink-600
+             border-green-500 text-green-400
            {% else %}
-             border-transparent text-gray-500 hover:text-pink-400
+             border-transparent text-gray-300 hover:text-green-400
            {% endif %}">
           Custom Query
         </a>

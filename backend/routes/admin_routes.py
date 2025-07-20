@@ -41,8 +41,12 @@ def data():
             'employee': employee
         })
 
-    # NEW: If an edit_regid is passed, fetch the corresponding employee
+    # NEW: If an edit_regid is passed, filter images to only that employee
     edit_regid = request.args.get("edit_regid")
+    if edit_regid:
+        images = [img for img in images if img['employee'] and img['employee'].regid.upper() == edit_regid.upper()]
+
+    # NEW: If an edit_regid is passed, fetch the corresponding employee
     employee_to_edit = None
     if edit_regid:
         employee_to_edit = Student_data.query.filter_by(
@@ -50,13 +54,22 @@ def data():
             session_code_id=session_id
         ).first()
 
+    # Fetch all employees for the current session
+    employees = Student_data.query.filter_by(session_code_id=session_id).all()
+
+    # Add a .full_name property to each for display
+    for emp in employees:
+        emp.full_name = f"{emp.last_name}, {emp.first_name}"
+
     return render_template(
         'admin/data.html',
         active_tab='employee',
         images=images,
         image_no=len(images),
-        employee=employee_to_edit  # <-- Pass this into the template
+        employee=employee_to_edit,
+        employees=employees  # ✅ Now passed to employee_sidebar.html
     )
+
 
 # -- Weekly Attendance Tab --
 @admin_bp.route('/weekly_attendance')
