@@ -209,6 +209,13 @@ function startEncodingGeneration() {
   // Set encoding in progress flag
   isEncodingInProgress = true;
   
+  // Show toast notification that encoding has started
+  if (window.parent && window.parent.showNotification) {
+    window.parent.showNotification("Encoding generation started. Please do not close this tab.", "info", 3000);
+  } else if (window.showNotification) {
+    window.showNotification("Encoding generation started. Please do not close this tab.", "info", 3000);
+  }
+  
   // Show the modal
   document.getElementById('encodingModal').classList.remove('hidden');
   
@@ -389,46 +396,24 @@ function completeEncoding(success = true) {
   // Re-enable navigation
   enableNavigation();
   
-  // Update modal to show completion
-  const modal = document.getElementById('encodingModal');
-  const modalContent = modal.querySelector('.bg-gray-900');
+  // Close the modal immediately
+  closeModal();
   
+  // Show toast notification instead of modal completion screen
   if (success) {
-    modalContent.innerHTML = `
-      <div class="text-center">
-        <div class="bg-green-500/20 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-          <svg class="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-        </div>
-        <h3 class="text-2xl font-bold text-white mb-2">Encodings Generated Successfully!</h3>
-        <p class="text-gray-300 mb-6">Face recognition is now ready for all employees.</p>
-        <button onclick="closeModal()" class="bg-green-500 hover:bg-green-600 text-black px-6 py-3 rounded-full font-semibold transition-colors">
-          Continue
-        </button>
-      </div>
-    `;
+    // Check if parent window has the notification function
+    if (window.parent && window.parent.showNotification) {
+      window.parent.showNotification("Encodings generated successfully! Face recognition is now ready for all employees.", "success", 7000);
+    } else if (window.showNotification) {
+      window.showNotification("Encodings generated successfully! Face recognition is now ready for all employees.", "success", 7000);
+    }
   } else {
-    modalContent.innerHTML = `
-      <div class="text-center">
-        <div class="bg-red-500/20 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-          <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </div>
-        <h3 class="text-2xl font-bold text-white mb-2">Encoding Generation Failed</h3>
-        <p class="text-gray-300 mb-6">Please try again or contact support if the problem persists.</p>
-        <button onclick="closeModal()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-semibold transition-colors">
-          Close
-        </button>
-      </div>
-    `;
+    if (window.parent && window.parent.showNotification) {
+      window.parent.showNotification("Encoding generation failed. Please try again or contact support.", "error", 7000);
+    } else if (window.showNotification) {
+      window.showNotification("Encoding generation failed. Please try again or contact support.", "error", 7000);
+    }
   }
-  
-  // Auto-close after 3 seconds
-  setTimeout(() => {
-    closeModal();
-  }, 3000);
 }
 
 function closeModal() {

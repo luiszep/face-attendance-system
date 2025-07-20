@@ -4,16 +4,7 @@
     <!-- Scrollable Main Content Area -->
     <div class="flex-1 overflow-y-auto space-y-6 scrollbar-hide px-4 pt-4 pb-20">
       <div class="w-full max-w-5xl mx-auto">
-        <!-- Alert / Flash Messages -->
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <ul class="mb-4 text-sm text-yellow-700">
-              {% for message in messages %}
-                <li>{{ message }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
+        <!-- Flash messages now handled by main template's modern notification system -->
   
         {% if request.args.get('add_new') %}
           <!-- Employee Form (Add New) - Only show this when add_new parameter is present -->

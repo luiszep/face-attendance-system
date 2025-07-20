@@ -1,15 +1,7 @@
 <form method="POST" action="{{ url_for('general_bp.edit_employee') }}">
     <input type="hidden" name="regid" value="{{ employee.regid }}">
   
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul class="mb-4 text-sm text-yellow-600">
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+    <!-- Flash messages now handled by main template's modern notification system -->
   
     <div class="mb-4">
       <label for="first_name" class="block text-sm mb-1">First Name:</label>
