@@ -47,7 +47,7 @@ def compare(encodeListKnown, encodeFace):
             faceDis (list of float): Distances between known encodings and input.
             matchIndex (int): Index of the best match (lowest distance).
     """
-    matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
+    matches = face_recognition.compare_faces(encodeListKnown, encodeFace, tolerance=0.5)
     faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
     matchIndex = np.argmin(faceDis)  # Index of best match
     return matches, faceDis, matchIndex
