@@ -86,7 +86,7 @@ def load_user(user_id):
     return db.session.get(Users, int(user_id))
 
 # --- Function to Generate Video Frames ---
-def gen_frames(camera, session_code_id, duration=5):
+def gen_frames(camera, session_code_id, duration=20):
     """
     Generate video frames with real-time face recognition and attendance recording.
     Args:
@@ -125,15 +125,54 @@ def gen_frames(camera, session_code_id, duration=5):
             first_name, last_name, occupation, regular_wage = data[1], data[2], data[3], data[4]
             reg_id = student_id
             print(f"{first_name} {last_name}")
+            
+            # Get current status information for display
+            current_date = datetime.datetime.now().date()
+            try:
+                from backend.utils.helpers import get_employee_current_status, get_daily_time_summary, format_time_display
+                next_action, sequence_num = get_employee_current_status(reg_id, session_code_id, current_date)
+                daily_summary = get_daily_time_summary(reg_id, session_code_id, current_date)
+                
+                # Create status text
+                status_text = f"{next_action.upper()} #{sequence_num}"
+                formatted_time = format_time_display(daily_summary.get('total_hours', 0))
+                hours_text = f"Today: {formatted_time}"
+                session_count_text = f"Sessions: {len(daily_summary.get('sessions', []))}"
+                
+            except Exception as e:
+                print(f"[ERROR] Status display failed: {e}")
+                status_text = "SCAN"
+                hours_text = "Ready"
+                session_count_text = ""
+            
             # Scale face location back to original frame size
             y1, x2, y2, x1 = [v * 4 for v in faceLoc]
             bbox = x1, y1, x2 - x1, y2 - y1
-            # Draw bounding box and label
+            
+            # Draw bounding box and enhanced labels
             imgBackground = cvzone.cornerRect(frame, bbox, rt=0)
-            cv2.putText(frame, first_name, (bbox[0], bbox[1] - 35),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 3, lineType=cv2.LINE_AA)
-            cv2.putText(imgBackground, reg_id, (bbox[0], bbox[1] - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+            
+            # Employee name (yellow, larger)
+            cv2.putText(frame, f"{first_name} {last_name}", (bbox[0], bbox[1] - 65),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 3, lineType=cv2.LINE_AA)
+            
+            # Next action status (green for check-in, red for check-out)
+            status_color = (0, 255, 0) if next_action == 'check_in' else (0, 0, 255)
+            cv2.putText(frame, status_text, (bbox[0], bbox[1] - 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2, lineType=cv2.LINE_AA)
+            
+            # Daily hours (cyan)
+            cv2.putText(frame, hours_text, (bbox[0], bbox[1] - 15),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
+            
+            # Session count (white)  
+            if session_count_text:
+                cv2.putText(frame, session_count_text, (bbox[0], bbox[1] + 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            
+            # Employee ID (bottom)
+            cv2.putText(imgBackground, reg_id, (bbox[0], bbox[1] + 25),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
             # Record attendance in a separate thread
             if student_id:
                 current_date = datetime.datetime.now().date()
@@ -266,6 +305,73 @@ def index():
         flash("Please enter a valid session code first.", "error")
         return redirect(url_for('enter_session'))
     return render_template('index.html')
+
+# --- API Route to Get Employee Status ---
+@app.route('/api/employee_status/<reg_id>')
+def get_employee_status_api(reg_id):
+    """
+    API endpoint to get current employee status and session information.
+    
+    Args:
+        reg_id (str): Employee registration ID
+        
+    Returns:
+        JSON response with current status, session info, and daily summary
+    """
+    from flask import jsonify
+    from datetime import date
+    
+    # Validate session
+    if 'session_code_id' not in session:
+        return jsonify({'error': 'Session not found'}), 401
+    
+    session_code_id = int(session.get('session_code_id'))
+    today = date.today()
+    
+    try:
+        # Get current status and daily summary
+        from backend.utils.helpers import get_employee_current_status, get_daily_time_summary
+        
+        next_action, sequence_num = get_employee_current_status(reg_id, session_code_id, today)
+        daily_summary = get_daily_time_summary(reg_id, session_code_id, today)
+        
+        # Get employee info
+        from backend.models import Student_data
+        with app.app_context():
+            employee = Student_data.query.filter_by(
+                regid=reg_id,
+                session_code_id=session_code_id
+            ).first()
+            
+            if not employee:
+                return jsonify({'error': 'Employee not found'}), 404
+            
+            response_data = {
+                'employee': {
+                    'reg_id': reg_id,
+                    'first_name': employee.first_name,
+                    'last_name': employee.last_name,
+                    'occupation': employee.occupation
+                },
+                'current_status': {
+                    'next_action': next_action,
+                    'next_sequence': sequence_num,
+                    'status': daily_summary.get('status', 'no_entries'),
+                    'last_action': daily_summary.get('last_action', 'none')
+                },
+                'daily_summary': {
+                    'total_hours': daily_summary.get('total_hours', 0),
+                    'total_sessions': len(daily_summary.get('sessions', [])),
+                    'sessions': daily_summary.get('sessions', [])
+                },
+                'date': today.isoformat()
+            }
+            
+            return jsonify(response_data)
+            
+    except Exception as e:
+        print(f"[ERROR] Employee status API failed: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
     """

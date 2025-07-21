@@ -155,3 +155,55 @@ class PotentialClient(db.Model):
     phone_number = db.Column(db.String(20), nullable=True)
     submitted_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     status = db.Column(db.String(20), default='pending')
+
+
+# -------------------------------
+# Model: TimeEntry
+# -------------------------------
+class TimeEntry(db.Model):
+    """
+    Represents individual check-in/check-out events for employees.
+    Supports multiple sessions per day with proper sequencing.
+
+    Attributes:
+        id (int): Primary key.
+        reg_id (str): Employee registration ID.
+        session_code_id (int): Business/organization context.
+        timestamp (datetime): Exact time of the check-in/out event.
+        entry_type (str): Either 'check_in' or 'check_out'.
+        date (date): Date of the event (for daily grouping).
+        sequence_number (int): Sequential number for the day (1, 2, 3...).
+        first_name (str): Employee first name (denormalized for reporting).
+        last_name (str): Employee last name (denormalized for reporting).
+        occupation (str): Job title (denormalized for reporting).
+        regular_wage (float): Hourly wage at time of event.
+    """
+    __tablename__ = 'time_entries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reg_id = db.Column(db.String(100), nullable=False)
+    session_code_id = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    entry_type = db.Column(db.String(10), nullable=False)  # 'check_in' or 'check_out'
+    date = db.Column(db.Date, nullable=False, default=datetime.date.today)
+    sequence_number = db.Column(db.Integer, nullable=False)  # 1, 2, 3... per day
+    
+    # Employee information (denormalized for performance and reporting)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
+    occupation = db.Column(db.String(80), nullable=False)
+    regular_wage = db.Column(db.Float, nullable=False)
+
+    # Constraints to ensure data integrity
+    __table_args__ = (
+        # Ensure valid entry types
+        db.CheckConstraint("entry_type IN ('check_in', 'check_out')", name='check_entry_type'),
+        # Ensure sequence numbers are positive
+        db.CheckConstraint('sequence_number > 0', name='check_sequence_positive'),
+        # Create index for efficient queries
+        db.Index('idx_employee_date', 'reg_id', 'session_code_id', 'date'),
+        db.Index('idx_timestamp', 'timestamp'),
+    )
+
+    def __repr__(self):
+        return f'<TimeEntry: {self.reg_id} - {self.entry_type} #{self.sequence_number} on {self.date}>'

@@ -76,6 +76,51 @@
       </div>
       <!-- Camera feed image (hidden by default) -->
       <img id="camera1" src="" alt="Camera Feed" class="w-full h-full object-contain hidden rounded-lg" />
+
+      <!-- Status display after scan (hidden by default) -->
+      <div id="status-display" 
+        class="hidden absolute inset-0 flex flex-col items-center justify-center fade-in text-white z-20 backdrop-blur">
+        <div class="text-center p-8 bg-black bg-opacity-50 rounded-xl max-w-md">
+          
+          <!-- Employee info -->
+          <div id="employee-info" class="mb-6">
+            <h2 id="employee-name" class="text-2xl font-bold text-yellow-300 mb-2"></h2>
+            <p id="employee-id" class="text-cyan-300 text-sm"></p>
+          </div>
+
+          <!-- Status info -->
+          <div id="status-info" class="mb-6">
+            <div class="flex items-center justify-center mb-4">
+              <div id="status-icon" class="text-4xl mr-3"></div>
+              <div>
+                <p id="status-action" class="text-xl font-semibold"></p>
+                <p id="status-time" class="text-sm text-gray-300"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Daily summary -->
+          <div id="daily-summary" class="border-t border-gray-600 pt-4">
+            <div class="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <p class="text-2xl font-bold text-green-300" id="total-hours">0min</p>
+                <p class="text-xs text-gray-400">Total Time</p>
+              </div>
+              <div>
+                <p class="text-2xl font-bold text-blue-300" id="total-sessions">0</p>
+                <p class="text-xs text-gray-400">Sessions</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Continue button -->
+          <button onclick="resetInterface()" 
+            class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-all duration-200">
+            Continue
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -125,21 +170,106 @@
       // Load scan URL with timestamp to prevent caching
       cameraImg.src = `/Attendance_system/scan/${streamId}?t=${new Date().getTime()}`;
 
-      // Show scan result after 10 seconds
+      // Show scan result after 20 seconds
       setTimeout(() => {
         // Clean up camera feed
         cameraImg.classList.add("hidden");
         cameraImg.src = "";
 
-        // Optional: show scan icon again
-        const circle = document.getElementById("scanCircle");
-        circle.classList.remove("hidden");
+        // Try to fetch and display employee status
+        showStatusDisplay();
+      }, 20000);
+    }
 
-        // ✅ Reload the page after 1s (avoids flicker)
-        setTimeout(() => {
-          location.reload();
-        }, 1000);
+    let lastRecognizedEmployee = null;
+
+    function formatTimeDisplay(totalHours) {
+      // Format time: minutes first, then hours when > 60 minutes
+      if (totalHours === 0) return "0min";
+      
+      const totalMinutes = totalHours * 60;
+      
+      if (totalMinutes < 60) {
+        return `${Math.round(totalMinutes)}min`;
+      } else {
+        return `${totalHours.toFixed(1)}h`;
+      }
+    }
+
+    function showStatusDisplay() {
+      // For now, show the status display without specific employee data
+      // In a real implementation, you'd get the employee ID from the scan result
+      const statusDisplay = document.getElementById("status-display");
+      const overlay = document.getElementById("camera-placeholder");
+      
+      // Hide camera placeholder and show status
+      overlay.classList.add("hidden");
+      statusDisplay.classList.remove("hidden");
+
+      // Set default values while we develop the employee tracking
+      document.getElementById("employee-name").textContent = "Scan Complete";
+      document.getElementById("employee-id").textContent = "Face recognition successful";
+      document.getElementById("status-action").textContent = "Attendance Recorded";
+      document.getElementById("status-time").textContent = new Date().toLocaleTimeString();
+      document.getElementById("status-icon").textContent = "✅";
+      document.getElementById("total-hours").textContent = "-min";
+      document.getElementById("total-sessions").textContent = "-";
+
+      // Auto-reset after 10 seconds if user doesn't click Continue
+      setTimeout(() => {
+        resetInterface();
       }, 10000);
+    }
+
+    function fetchEmployeeStatus(regId) {
+      // Function to fetch employee status from API
+      fetch(`/Attendance_system/api/employee_status/${regId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            console.error('API Error:', data.error);
+            showStatusDisplay(); // Show generic status
+            return;
+          }
+
+          // Update status display with real data
+          document.getElementById("employee-name").textContent = 
+            `${data.employee.first_name} ${data.employee.last_name}`;
+          document.getElementById("employee-id").textContent = 
+            `${data.employee.reg_id} - ${data.employee.occupation}`;
+          
+          const nextAction = data.current_status.next_action;
+          const statusColor = nextAction === 'check_in' ? 'text-green-300' : 'text-red-300';
+          
+          document.getElementById("status-action").textContent = 
+            `${nextAction.toUpperCase()} #${data.current_status.next_sequence}`;
+          document.getElementById("status-action").className = `text-xl font-semibold ${statusColor}`;
+          document.getElementById("status-time").textContent = new Date().toLocaleTimeString();
+          document.getElementById("status-icon").textContent = nextAction === 'check_in' ? '🟢' : '🔴';
+          
+          document.getElementById("total-hours").textContent = formatTimeDisplay(data.daily_summary.total_hours);
+          document.getElementById("total-sessions").textContent = data.daily_summary.total_sessions;
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+          showStatusDisplay(); // Show generic status on error
+        });
+    }
+
+    function resetInterface() {
+      // Hide status display and show scan icon again
+      const statusDisplay = document.getElementById("status-display");
+      const overlay = document.getElementById("camera-placeholder");
+      const circle = document.getElementById("scanCircle");
+      const button = document.querySelector("button");
+
+      statusDisplay.classList.add("hidden");
+      overlay.classList.remove("hidden");
+      circle.classList.remove("hidden");
+      
+      if (button) {
+        button.classList.remove("hidden");
+      }
     }
   </script>
 </body>
