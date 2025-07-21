@@ -102,17 +102,17 @@
                     <div>
                       <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">First Name</label>
                       <p id="firstNameDisplay" class="text-lg font-semibold text-white">{{ image.employee.first_name }}</p>
-                      <input type="text" id="firstNameEdit" value="{{ image.employee.first_name }}" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                      <input type="text" id="firstNameEdit" value="{{ image.employee.first_name }}" maxlength="80" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
                     </div>
                     <div>
                       <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Last Name</label>
                       <p id="lastNameDisplay" class="text-lg font-semibold text-white">{{ image.employee.last_name }}</p>
-                      <input type="text" id="lastNameEdit" value="{{ image.employee.last_name }}" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                      <input type="text" id="lastNameEdit" value="{{ image.employee.last_name }}" maxlength="80" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
                     </div>
                     <div>
                       <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Job Title</label>
                       <p id="occupationDisplay" class="text-lg font-semibold text-white">{{ image.employee.occupation }}</p>
-                      <input type="text" id="occupationEdit" value="{{ image.employee.occupation }}" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                      <input type="text" id="occupationEdit" value="{{ image.employee.occupation }}" maxlength="80" class="hidden w-full px-3 py-2 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
                     </div>
                   </div>
                   <div class="space-y-3">
@@ -140,7 +140,7 @@
                       <p id="regularWageDisplay" class="text-2xl font-bold text-green-600">${{ "%.2f"|format(image.employee.regular_wage) }}/hr</p>
                       <div class="hidden relative" id="regularWageEditContainer">
                         <span class="absolute left-3 top-3 text-gray-500">$</span>
-                        <input type="number" step="0.01" id="regularWageEdit" value="{{ image.employee.regular_wage }}" class="w-full pl-8 pr-4 py-3 border border-green-500/30 rounded-lg text-xl font-bold bg-gray-700 text-green-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <input type="number" step="0.01" min="0.01" max="999.99" id="regularWageEdit" value="{{ image.employee.regular_wage }}" class="w-full pl-8 pr-4 py-3 border border-green-500/30 rounded-lg text-xl font-bold bg-gray-700 text-green-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
                         <span class="absolute right-3 top-3 text-gray-500">/hr</span>
                       </div>
                     </div>
@@ -148,7 +148,7 @@
                       <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Regular Hours/Day</label>
                       <p id="regularHoursDisplay" class="text-lg font-semibold text-white">{{ image.employee.regular_hours }} hours</p>
                       <div class="hidden relative" id="regularHoursEditContainer">
-                        <input type="number" id="regularHoursEdit" value="{{ image.employee.regular_hours }}" class="w-full pr-16 py-3 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <input type="number" min="1" max="24" id="regularHoursEdit" value="{{ image.employee.regular_hours }}" class="w-full pr-16 py-3 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
                         <span class="absolute right-3 top-3 text-gray-500">hours</span>
                       </div>
                     </div>
@@ -159,7 +159,7 @@
                       <p id="overtimeWageDisplay" class="text-2xl font-bold text-amber-600">${{ "%.2f"|format(image.employee.overtime_wage) }}/hr</p>
                       <div class="hidden relative" id="overtimeWageEditContainer">
                         <span class="absolute left-3 top-3 text-gray-500">$</span>
-                        <input type="number" step="0.01" id="overtimeWageEdit" value="{{ image.employee.overtime_wage }}" class="w-full pl-8 pr-4 py-3 border border-green-500/30 rounded-lg text-xl font-bold bg-gray-700 text-amber-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <input type="number" step="0.01" min="0.01" max="999.99" id="overtimeWageEdit" value="{{ image.employee.overtime_wage }}" class="w-full pl-8 pr-4 py-3 border border-green-500/30 rounded-lg text-xl font-bold bg-gray-700 text-amber-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
                         <span class="absolute right-3 top-3 text-gray-500">/hr</span>
                       </div>
                     </div>
@@ -167,7 +167,7 @@
                       <label class="text-sm font-medium text-gray-500 uppercase tracking-wide">Max OT Hours/Day</label>
                       <p id="maxOvertimeDisplay" class="text-lg font-semibold text-white">{% if image.employee.maximum_overtime_hours %}{{ image.employee.maximum_overtime_hours }} hours{% else %}Not set{% endif %}</p>
                       <div class="hidden relative" id="maxOvertimeEditContainer">
-                        <input type="number" id="maxOvertimeEdit" value="{{ image.employee.maximum_overtime_hours or '' }}" placeholder="Optional" class="w-full pr-16 py-3 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
+                        <input type="number" min="0" max="24" id="maxOvertimeEdit" value="{{ image.employee.maximum_overtime_hours or '' }}" placeholder="Optional" class="w-full pr-16 py-3 border border-green-500/30 rounded-lg text-lg font-semibold bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors" />
                         <span class="absolute right-3 top-3 text-gray-500">hours</span>
                       </div>
                     </div>
@@ -272,6 +272,9 @@ function enterEditMode() {
   
   // Focus on first field
   document.getElementById('firstNameEdit').focus();
+  
+  // Setup validation for edit mode
+  setupEditValidation();
 }
 
 function exitEditMode() {
@@ -317,7 +320,132 @@ function cancelEdit() {
   exitEditMode();
 }
 
+// Validation state for edit form
+let editValidationErrors = {
+  firstName: false,
+  lastName: false,
+  occupation: false,
+  regularWage: false,
+  overtimeWage: false,
+  regularHours: false,
+  maxOvertime: false
+};
+
+function updateSaveButton() {
+  const saveBtn = document.querySelector('button[onclick="saveChanges()"]');
+  if (!saveBtn) return;
+  
+  const hasErrors = Object.values(editValidationErrors).some(error => error);
+  
+  if (hasErrors) {
+    saveBtn.disabled = true;
+    saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    saveBtn.classList.remove('hover:bg-green-700', 'hover:shadow-xl', 'hover:-translate-y-0.5');
+  } else {
+    saveBtn.disabled = false;
+    saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    saveBtn.classList.add('hover:bg-green-700', 'hover:shadow-xl', 'hover:-translate-y-0.5');
+  }
+}
+
+function setupEditValidation() {
+  // Text fields validation
+  ['firstNameEdit', 'lastNameEdit', 'occupationEdit'].forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    
+    field.addEventListener('input', function() {
+      const isValid = this.value.length <= 80 && this.value.trim().length > 0;
+      const errorKey = fieldId.replace('Edit', '').replace('Name', '');
+      editValidationErrors[fieldId.replace('Edit', '')] = !isValid;
+      
+      // Visual feedback
+      if (!isValid) {
+        this.classList.add('border-red-500');
+        this.classList.remove('border-green-500/30');
+      } else {
+        this.classList.remove('border-red-500');
+        this.classList.add('border-green-500/30');
+      }
+      
+      updateSaveButton();
+    });
+  });
+
+  // Wage fields validation
+  ['regularWageEdit', 'overtimeWageEdit'].forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    
+    field.addEventListener('input', function() {
+      const value = parseFloat(this.value);
+      const isValid = value >= 0.01 && value <= 999.99;
+      editValidationErrors[fieldId.replace('Edit', '')] = !isValid;
+      
+      // Visual feedback
+      if (!isValid && this.value !== '') {
+        this.classList.add('border-red-500');
+        this.classList.remove('border-green-500/30');
+      } else {
+        this.classList.remove('border-red-500');
+        this.classList.add('border-green-500/30');
+      }
+      
+      updateSaveButton();
+    });
+  });
+
+  // Hours fields validation
+  const regularHoursField = document.getElementById('regularHoursEdit');
+  const maxOvertimeField = document.getElementById('maxOvertimeEdit');
+  
+  if (regularHoursField) {
+    regularHoursField.addEventListener('input', function() {
+      const value = parseInt(this.value);
+      const isValid = value >= 1 && value <= 24;
+      editValidationErrors.regularHours = !isValid;
+      
+      // Visual feedback
+      if (!isValid && this.value !== '') {
+        this.classList.add('border-red-500');
+        this.classList.remove('border-green-500/30');
+      } else {
+        this.classList.remove('border-red-500');
+        this.classList.add('border-green-500/30');
+      }
+      
+      updateSaveButton();
+    });
+  }
+  
+  if (maxOvertimeField) {
+    maxOvertimeField.addEventListener('input', function() {
+      const value = parseInt(this.value);
+      const isValid = this.value === '' || (value >= 0 && value <= 24);
+      editValidationErrors.maxOvertime = !isValid;
+      
+      // Visual feedback
+      if (!isValid && this.value !== '') {
+        this.classList.add('border-red-500');
+        this.classList.remove('border-green-500/30');
+      } else {
+        this.classList.remove('border-red-500');
+        this.classList.add('border-green-500/30');
+      }
+      
+      updateSaveButton();
+    });
+  }
+}
+
 function saveChanges() {
+  // Check if form is valid
+  const hasErrors = Object.values(editValidationErrors).some(error => error);
+  if (hasErrors) {
+    alert('Please correct all validation errors before saving.');
+    return;
+  }
+  
   // Validate required fields
   const firstName = document.getElementById('firstNameEdit').value.trim();
   const lastName = document.getElementById('lastNameEdit').value.trim();
