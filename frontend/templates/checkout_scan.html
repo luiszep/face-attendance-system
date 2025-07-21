@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check Out - Face Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in {
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .backdrop-blur {
+      backdrop-filter: blur(8px);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .red-glow {
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen m-0 p-0 bg-gradient-to-br from-red-900 via-gray-900 to-red-800 overflow-hidden flex items-center justify-center">
+
+  <!-- Beep sound -->
+  <audio id="beep" src="{{ url_for('static', filename='beep.wav') }}" preload="auto"></audio>
+
+  <div class="w-full h-full flex items-center justify-center p-4">
+    <!-- Check Out Header -->
+    <div class="absolute top-4 left-0 right-0 text-center">
+      <h1 class="text-4xl font-bold text-red-400 fade-in">CHECK OUT</h1>
+      <p class="text-gray-300 mt-2">Position your face in the camera</p>
+    </div>
+
+    <div class="relative w-full max-w-screen-md aspect-video flex items-center justify-center rounded-xl overflow-hidden shadow-2xl bg-black red-glow">
+
+      <!-- Camera feed image (starts immediately) -->
+      <img id="camera1" src="" alt="Camera Feed" class="w-full h-full object-contain rounded-lg" />
+
+      <!-- Status display after scan (hidden by default) -->
+      <div id="status-display" 
+        class="hidden absolute inset-0 flex flex-col items-center justify-center fade-in text-white z-20 backdrop-blur">
+        <div class="text-center p-8 bg-black bg-opacity-60 rounded-xl max-w-lg">
+          
+          <!-- Status icon -->
+          <div id="status-icon" class="text-6xl mb-4">⏳</div>
+          
+          <!-- Result message -->
+          <div id="result-message" class="mb-6">
+            <p class="text-xl font-medium text-gray-300">Processing check-out...</p>
+          </div>
+
+          <!-- Action button -->
+          <button onclick="goBack()" 
+            class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md text-sm font-medium transition-all duration-200 shadow-lg">
+            ← Back to Main Menu
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Start camera immediately when page loads
+    window.onload = function() {
+      startCamera();
+    };
+
+    function startCamera() {
+      const cameraImg = document.getElementById("camera1");
+      
+      // Load scan URL immediately - no countdown, no delays
+      cameraImg.src = `/Attendance_system/scan/1?t=${new Date().getTime()}`;
+
+      // Show scan result after 10 seconds
+      setTimeout(() => {
+        // Clean up camera feed
+        cameraImg.src = "";
+
+        // Show status display
+        showStatusDisplay();
+      }, 10000);
+    }
+
+    function showStatusDisplay() {
+      const statusDisplay = document.getElementById("status-display");
+      
+      // Show status overlay
+      statusDisplay.classList.remove("hidden");
+
+      // Set initial loading state
+      document.getElementById("status-icon").textContent = "⏳";
+      document.getElementById("result-message").innerHTML = '<p class="text-xl font-medium text-gray-300">Processing check-out...</p>';
+
+      // Get scan result after brief delay
+      setTimeout(() => {
+        showScanResult();
+      }, 1000);
+
+      // Auto-redirect to main menu after 5 seconds
+      setTimeout(() => {
+        goBack();
+      }, 5000);
+    }
+
+    function showScanResult() {
+      // First check for employee recognition results
+      fetch('/Attendance_system/api/clear_scan_results') // Clear previous results first
+        .then(() => {
+          // Small delay to ensure scan processing is complete
+          setTimeout(() => {
+            // Try to get any employee-specific results first
+            checkForEmployeeResults();
+          }, 500);
+        });
+    }
+
+    function checkForEmployeeResults() {
+      // Check the general no_recognition endpoint
+      fetch('/Attendance_system/api/scan_result/no_recognition')
+        .then(response => response.json())
+        .then(data => {
+          const statusIcon = document.getElementById("status-icon");
+          const resultMessage = document.getElementById("result-message");
+          
+          if (data.success === false && data.result === 'not_recognized') {
+            // Nobody was recognized
+            statusIcon.textContent = "❌";
+            resultMessage.innerHTML = 
+              `<p class="text-xl font-medium text-red-300">${data.message}</p>`;
+          } else if (data.success === true) {
+            // Employee was recognized - show success with actual employee info
+            statusIcon.textContent = "✅";
+            resultMessage.innerHTML = 
+              `<p class="text-xl font-medium text-green-300">Check-out successful!</p>
+               <p class="text-lg text-green-200 mt-2">${data.message}</p>`;
+          } else {
+            // Default success state for completed scan
+            statusIcon.textContent = "✅";
+            resultMessage.innerHTML = 
+              '<p class="text-xl font-medium text-green-300">Check-out completed successfully</p>';
+          }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+          // Default success state
+          document.getElementById("status-icon").textContent = "✅";
+          document.getElementById("result-message").innerHTML = 
+            '<p class="text-xl font-medium text-green-300">Check-out completed successfully</p>';
+        });
+    }
+
+    function goBack() {
+      // Go back to main menu
+      window.location.href = '/Attendance_system/enter-session';
+    }
+  </script>
+</body>
+
+</html>

@@ -10,24 +10,87 @@
 
 <body class="min-h-screen bg-gradient-to-br from-blue-900 via-gray-900 to-indigo-900 flex items-center justify-center text-white">
 
-  <div class="bg-white bg-opacity-10 backdrop-blur-md p-8 rounded-xl shadow-2xl w-full max-w-md fade-in">
-    <h2 class="text-2xl font-semibold text-center mb-6 text-white">Enter Session Code</h2>
+  <div class="bg-white bg-opacity-10 backdrop-blur-md p-8 rounded-xl shadow-2xl w-full max-w-lg fade-in">
+    
+    {% if business_info and business_info.is_configured %}
+      <!-- Business Header -->
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-semibold text-white">{{ business_info.business_name or 'Face Attendance System' }}</h2>
+        <p class="text-sm text-gray-300 mt-1">Session: {{ business_info.session_code }}</p>
+        <a href="/Attendance_system/session-settings" class="text-xs text-blue-300 hover:text-blue-200">Settings</a>
+      </div>
+    {% else %}
+      <!-- Setup Header -->
+      <h2 class="text-2xl font-semibold text-center mb-6 text-white">Face Attendance Setup</h2>
+    {% endif %}
 
-    <form method="POST" class="flex flex-col gap-4">
-      <input
-        type="text"
-        name="session_code_id"
-        placeholder="e.g., 123"
-        required
-        class="px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <button
-        type="submit"
-        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-md transition-all duration-200"
-      >
-        Start Camera
-      </button>
-    </form>
+    {% if not show_actions %}
+      <!-- Session Code Entry (First Time Setup) -->
+      <form method="POST" class="mb-6">
+        <div class="mb-4">
+          <input
+            type="text"
+            name="session_code_id"
+            placeholder="Enter Session Code (e.g., 123)"
+            required
+            class="w-full px-4 py-3 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-lg"
+          />
+        </div>
+        
+        <div class="mb-4">
+          <input
+            type="text"
+            name="business_name"
+            placeholder="Business Name (Optional)"
+            class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+          />
+        </div>
+        
+        <div class="mb-4 flex items-center justify-center">
+          <label class="flex items-center text-white text-sm">
+            <input
+              type="checkbox"
+              name="save_locally"
+              value="true"
+              checked
+              class="mr-2 rounded"
+            />
+            Save locally (never enter again)
+          </label>
+        </div>
+        
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md transition-all duration-200"
+        >
+          Setup System
+        </button>
+      </form>
+    {% else %}
+      <!-- Check-in / Check-out Buttons -->
+      <div id="action-buttons" class="flex flex-col gap-4 mb-6">
+        <button
+          id="checkin-btn"
+          onclick="startScan('checkin')"
+          class="bg-green-600 hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg text-xl transition-all duration-200"
+        >
+          ✓ CHECK IN
+        </button>
+        
+        <button
+          id="checkout-btn"
+          onclick="startScan('checkout')"
+          class="bg-red-600 hover:bg-red-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg text-xl transition-all duration-200"
+        >
+          ✗ CHECK OUT
+        </button>
+      </div>
+
+      <!-- Timer Display -->
+      <div id="timer-display" class="hidden mt-4 text-center">
+        <p class="text-yellow-300 text-sm" id="timer-text">Please wait...</p>
+      </div>
+    {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -59,6 +122,75 @@
       }
     }
   </style>
+
+  <script>
+    let currentTimer = null;
+
+    function startScan(action) {
+      // Disable buttons immediately
+      disableButtonsWithTimer(action);
+      
+      // Navigate directly to scan page
+      if (action === 'checkin') {
+        window.location.href = '/Attendance_system/checkin-scan';
+      } else {
+        window.location.href = '/Attendance_system/checkout-scan';
+      }
+    }
+
+    function disableButtonsWithTimer(clickedAction) {
+      const checkinBtn = document.getElementById('checkin-btn');
+      const checkoutBtn = document.getElementById('checkout-btn');
+      const timerDisplay = document.getElementById('timer-display');
+      const timerText = document.getElementById('timer-text');
+      
+      // Disable both buttons
+      checkinBtn.disabled = true;
+      checkoutBtn.disabled = true;
+      
+      // Show timer
+      timerDisplay.classList.remove('hidden');
+      
+      // Update button text to show which was clicked
+      if (clickedAction === 'checkin') {
+        checkinBtn.innerHTML = '⏳ CHECKING IN...';
+      } else {
+        checkoutBtn.innerHTML = '⏳ CHECKING OUT...';
+      }
+      
+      // Start 60-second countdown
+      let timeLeft = 60;
+      
+      function updateTimer() {
+        if (timeLeft > 0) {
+          timerText.textContent = `Please wait ${timeLeft} seconds before next scan...`;
+          timeLeft--;
+          currentTimer = setTimeout(updateTimer, 1000);
+        } else {
+          // Re-enable buttons
+          checkinBtn.disabled = false;
+          checkoutBtn.disabled = false;
+          checkinBtn.innerHTML = '✓ CHECK IN';
+          checkoutBtn.innerHTML = '✗ CHECK OUT';
+          timerDisplay.classList.add('hidden');
+          
+          if (currentTimer) {
+            clearTimeout(currentTimer);
+            currentTimer = null;
+          }
+        }
+      }
+      
+      updateTimer();
+    }
+
+    // Clear any existing timer when page loads
+    window.addEventListener('load', function() {
+      if (currentTimer) {
+        clearTimeout(currentTimer);
+      }
+    });
+  </script>
 
 </body>
 

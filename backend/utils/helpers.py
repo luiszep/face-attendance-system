@@ -238,6 +238,9 @@ def get_employee_current_status(reg_id, session_code_id, current_date):
         return 'check_in', 1  # Default fallback
 
 
+# Global variable to track last scan results for the simple UI
+last_scan_results = {}
+
 def record_time_entry(first_name, last_name, occupation, regular_wage, current_date, reg_id, session_code_id):
     """
     Record a new time entry (check-in or check-out) for multi-session attendance tracking.
@@ -284,6 +287,14 @@ def record_time_entry(first_name, last_name, occupation, regular_wage, current_d
                 if recent_entry:
                     time_diff = (current_time - recent_entry.timestamp).total_seconds()
                     print(f"[NEW SYSTEM] Blocked - entry exists from {time_diff:.1f}s ago ({recent_entry.entry_type}#{recent_entry.sequence_number})")
+                    
+                    # Store result for simple UI
+                    last_scan_results[reg_id] = {
+                        'result': 'blocked',
+                        'message': f"{first_name} {last_name} ({reg_id}) - No time recorded (too soon after last scan)",
+                        'timestamp': current_time,
+                        'employee_recognized': True
+                    }
                     return True
                 
                 # Get employee status for next action
@@ -300,6 +311,14 @@ def record_time_entry(first_name, last_name, occupation, regular_wage, current_d
                 
                 if existing_duplicate:
                     print(f"[NEW SYSTEM] Blocked - exact duplicate {action}#{sequence_num} exists")
+                    
+                    # Store result for simple UI
+                    last_scan_results[reg_id] = {
+                        'result': 'blocked',
+                        'message': f"{first_name} {last_name} ({reg_id}) - No time recorded (duplicate entry)",
+                        'timestamp': current_time,
+                        'employee_recognized': True
+                    }
                     return True
                 
                 # Create and save new entry
@@ -320,6 +339,18 @@ def record_time_entry(first_name, last_name, occupation, regular_wage, current_d
                 db.session.commit()
                 
                 print(f"[NEW SYSTEM] SUCCESS: {action.upper()}#{sequence_num} for {first_name} {last_name}")
+                
+                # Store result for simple UI
+                action_text = "Check in" if action == 'check_in' else "Check out"
+                last_scan_results[reg_id] = {
+                    'result': 'success',
+                    'message': f"{first_name} {last_name} ({reg_id}) - {action_text} time recorded",
+                    'action': action,
+                    'sequence': sequence_num,
+                    'timestamp': current_time,
+                    'employee_recognized': True
+                }
+                
                 return True
                 
         except Exception as e:
@@ -328,6 +359,14 @@ def record_time_entry(first_name, last_name, occupation, regular_wage, current_d
                 db.session.rollback()
             except:
                 pass
+            
+            # Store error result for simple UI
+            last_scan_results[reg_id] = {
+                'result': 'error',
+                'message': f"{first_name} {last_name} ({reg_id}) - Error recording time",
+                'timestamp': datetime.now(),
+                'employee_recognized': True
+            }
             return False
 
 

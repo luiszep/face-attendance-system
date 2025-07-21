@@ -11,7 +11,7 @@ import cvzone
 import pickle
 import face_recognition
 from flask import Flask, render_template, Response, flash, request, redirect, url_for, session
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required, current_user
 from flask_migrate import Migrate
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from werkzeug.exceptions import NotFound
@@ -55,6 +55,9 @@ db.init_app(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'auth_bp.login'  # Redirect unauthorized users to login page
+login_manager.login_message = 'Please log in with admin credentials to access this page.'
+login_manager.login_message_category = 'info'
 
 # --- Certificate Paths for HTTPS ---
 cert_path = app.config['CERT_PATH']
@@ -86,13 +89,13 @@ def load_user(user_id):
     return db.session.get(Users, int(user_id))
 
 # --- Function to Generate Video Frames ---
-def gen_frames(camera, session_code_id, duration=20):
+def gen_frames(camera, session_code_id, duration=10):
     """
     Generate video frames with real-time face recognition and attendance recording.
     Args:
         camera: OpenCV VideoCapture object.
         session_code_id: Numeric ID for the session (used to load encodings).
-        duration: Time limit for the stream in seconds (default is 5).
+        duration: Time limit for the stream in seconds (default is 10).
     Yields:
         Encoded JPEG frames for HTTP multipart response.
     """
@@ -108,6 +111,8 @@ def gen_frames(camera, session_code_id, duration=20):
     encodeListKnown, studentIds = encodeListKnownWithIds
     # --- Start streaming frames ---
     start_time = time.time()
+    recognized_any_employee = False
+    
     while camera is not None and (time.time() - start_time < duration):
         success, frame = camera.read()
         if not success:
@@ -126,55 +131,23 @@ def gen_frames(camera, session_code_id, duration=20):
             reg_id = student_id
             print(f"{first_name} {last_name}")
             
-            # Get current status information for display
-            current_date = datetime.datetime.now().date()
-            try:
-                from backend.utils.helpers import get_employee_current_status, get_daily_time_summary, format_time_display
-                next_action, sequence_num = get_employee_current_status(reg_id, session_code_id, current_date)
-                daily_summary = get_daily_time_summary(reg_id, session_code_id, current_date)
-                
-                # Create status text
-                status_text = f"{next_action.upper()} #{sequence_num}"
-                formatted_time = format_time_display(daily_summary.get('total_hours', 0))
-                hours_text = f"Today: {formatted_time}"
-                session_count_text = f"Sessions: {len(daily_summary.get('sessions', []))}"
-                
-            except Exception as e:
-                print(f"[ERROR] Status display failed: {e}")
-                status_text = "SCAN"
-                hours_text = "Ready"
-                session_count_text = ""
-            
             # Scale face location back to original frame size
             y1, x2, y2, x1 = [v * 4 for v in faceLoc]
             bbox = x1, y1, x2 - x1, y2 - y1
             
-            # Draw bounding box and enhanced labels
+            # Draw bounding box and simple labels
             imgBackground = cvzone.cornerRect(frame, bbox, rt=0)
             
-            # Employee name (yellow, larger)
-            cv2.putText(frame, f"{first_name} {last_name}", (bbox[0], bbox[1] - 65),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 3, lineType=cv2.LINE_AA)
+            # Employee name (yellow, prominent)
+            cv2.putText(frame, f"{first_name} {last_name}", (bbox[0], bbox[1] - 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 3, lineType=cv2.LINE_AA)
             
-            # Next action status (green for check-in, red for check-out)
-            status_color = (0, 255, 0) if next_action == 'check_in' else (0, 0, 255)
-            cv2.putText(frame, status_text, (bbox[0], bbox[1] - 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2, lineType=cv2.LINE_AA)
-            
-            # Daily hours (cyan)
-            cv2.putText(frame, hours_text, (bbox[0], bbox[1] - 15),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
-            
-            # Session count (white)  
-            if session_count_text:
-                cv2.putText(frame, session_count_text, (bbox[0], bbox[1] + 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-            
-            # Employee ID (bottom)
-            cv2.putText(imgBackground, reg_id, (bbox[0], bbox[1] + 25),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+            # Employee ID (cyan, below name)
+            cv2.putText(frame, reg_id, (bbox[0], bbox[1] - 15),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, lineType=cv2.LINE_AA)
             # Record attendance in a separate thread
             if student_id:
+                recognized_any_employee = True
                 current_date = datetime.datetime.now().date()
                 t = threading.Thread(target=record_attendance,
                                     args=(first_name, last_name, occupation, regular_wage, current_date, reg_id, session_code_id))
@@ -184,25 +157,227 @@ def gen_frames(camera, session_code_id, duration=20):
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    
+    # After scan duration ends, store result if no employee was recognized
+    if not recognized_any_employee:
+        from backend.utils.helpers import last_scan_results
+        
+        # Store "not recognized" result
+        last_scan_results['no_recognition'] = {
+            'result': 'not_recognized',
+            'message': 'Not recognized. Please try again.',
+            'timestamp': datetime.datetime.now(),
+            'employee_recognized': False
+        }
 
 
 # --- Route to enter session code manually ---
 @app.route('/enter-session', methods=['GET', 'POST'])
 def enter_session():
     """
-    Route to enter a session code manually before accessing the scanner.
-    GET: Renders the form for entering a session code.
-    POST: Saves the session code to session and redirects to index if valid.
+    Route to handle session code entry and scanning.
+    Supports persistent local session code storage for business deployment.
     """
+    from backend.utils.session_manager import session_manager
+    
     if request.method == 'POST':
         entered_code = request.form.get('session_code_id')
-        if entered_code:
+        scan_action = request.form.get('scan_action')  # 'checkin' or 'checkout'
+        business_name = request.form.get('business_name', '').strip()
+        save_locally = request.form.get('save_locally') == 'true'
+        
+        # Handle session code entry (first-time setup or update)
+        if entered_code and not scan_action:
+            # Save session code locally if requested
+            if save_locally:
+                success = session_manager.set_session_code(entered_code, business_name)
+                if success:
+                    flash("Session code saved locally! You won't need to enter it again.", "success")
+                else:
+                    flash("Failed to save session code locally.", "error")
+            
+            # Set session code for current session
             session['session_code_id'] = entered_code
-            flash("Session code accepted!", "success")
-            return redirect(url_for('index'))
+            
+            # Show the action buttons
+            business_info = session_manager.get_business_info()
+            return render_template('enter_session.html', 
+                                 show_actions=True,
+                                 session_code=entered_code,
+                                 business_info=business_info)
+        
+        # Handle scan action (check-in/check-out)
+        elif scan_action:
+            # Use current session code or saved code
+            current_code = session.get('session_code_id') or session_manager.get_session_code()
+            
+            if not current_code:
+                flash("Session code required.", "error")
+                return render_template('enter_session.html')
+            
+            session['session_code_id'] = current_code
+            session['intended_action'] = scan_action
+            
+            # Clear any previous scan results
+            from backend.utils.helpers import last_scan_results
+            last_scan_results.clear()
+            
+            # Start scanning immediately with appropriate theme
+            if scan_action == 'checkin':
+                return render_template('checkin_scan.html', start_scan_immediately=True)
+            else:
+                return render_template('checkout_scan.html', start_scan_immediately=True)
+        
         else:
             flash("Please enter a valid session code.", "error")
-    return render_template('enter_session.html')
+    
+    # GET request - check if session code is already configured
+    business_info = session_manager.get_business_info()
+    
+    if business_info['is_configured']:
+        # Auto-load saved session code
+        session['session_code_id'] = business_info['session_code']
+        return render_template('enter_session.html', 
+                             show_actions=True,
+                             session_code=business_info['session_code'],
+                             business_info=business_info)
+    
+    # No saved session code - show entry form
+    return render_template('enter_session.html', business_info=business_info)
+
+# --- Route to update session settings ---
+@app.route('/session-settings', methods=['GET', 'POST'])
+def session_settings():
+    """
+    Route to update session code settings for businesses.
+    Uses standalone authentication for local deployment.
+    """
+    from backend.utils.session_manager import session_manager
+    
+    # Check if user is authenticated locally
+    if 'admin_authenticated' not in session or not session.get('admin_authenticated'):
+        return redirect(url_for('admin_login'))
+    
+    # Check authentication timeout (30 minutes)
+    import time
+    auth_time = session.get('admin_auth_time', 0)
+    if time.time() - auth_time > 1800:  # 30 minutes
+        session.pop('admin_authenticated', None)
+        flash("Session expired. Please log in again.", "info")
+        return redirect(url_for('admin_login'))
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'update':
+            new_code = request.form.get('new_session_code')
+            business_name = request.form.get('business_name', '').strip()
+            
+            if new_code:
+                success = session_manager.set_session_code(new_code, business_name)
+                if success:
+                    session['session_code_id'] = new_code
+                    flash("Session code updated successfully!", "success")
+                    return redirect(url_for('enter_session'))
+                else:
+                    flash("Failed to update session code.", "error")
+            else:
+                flash("Please enter a valid session code.", "error")
+        
+        elif action == 'clear':
+            success = session_manager.clear_session_code()
+            if success:
+                session.pop('session_code_id', None)
+                flash("Session code cleared. You can now enter a new one.", "success")
+                return redirect(url_for('enter_session'))
+            else:
+                flash("Failed to clear session code.", "error")
+    
+    business_info = session_manager.get_business_info()
+    return render_template('session_settings.html', business_info=business_info)
+
+# --- Standalone Admin Login for Local Deployment ---
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    """
+    Standalone admin login for local session settings.
+    Uses environment variables for credentials.
+    """
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Get admin credentials from local config
+        from backend.utils.session_manager import session_manager
+        admin_creds = session_manager.get_admin_credentials()
+        admin_username = admin_creds['username']
+        admin_password = admin_creds['password']
+        
+        if username == admin_username and password == admin_password:
+            import time
+            session['admin_authenticated'] = True
+            session['admin_auth_time'] = time.time()
+            
+            # Redirect to originally requested page
+            next_page = request.args.get('next', url_for('session_settings'))
+            return redirect(next_page)
+        else:
+            flash("Invalid credentials. Please try again.", "error")
+    
+    return render_template('admin_login.html')
+
+# --- Admin Logout for Local Deployment ---
+@app.route('/admin-logout')
+def admin_logout():
+    """Clear local admin authentication."""
+    session.pop('admin_authenticated', None)
+    session.pop('admin_auth_time', None)
+    flash("Logged out successfully.", "info")
+    return redirect(url_for('enter_session'))
+
+# --- Check-in Scan Route ---
+@app.route('/checkin-scan')
+def checkin_scan():
+    """Display the check-in scan interface."""
+    # Verify session code exists
+    from backend.utils.session_manager import session_manager
+    current_code = session.get('session_code_id') or session_manager.get_session_code()
+    
+    if not current_code:
+        flash("Please enter your session code first.", "error")
+        return redirect(url_for('enter_session'))
+    
+    # Ensure session code is set
+    session['session_code_id'] = current_code
+    session['intended_action'] = 'checkin'
+    
+    # Clear any previous scan results
+    from backend.utils.helpers import last_scan_results
+    last_scan_results.clear()
+    
+    return render_template('checkin_scan.html')
+
+# --- Check-out Scan Route ---
+@app.route('/checkout-scan')
+def checkout_scan():
+    """Display the check-out scan interface."""
+    # Verify session code exists
+    from backend.utils.session_manager import session_manager
+    current_code = session.get('session_code_id') or session_manager.get_session_code()
+    
+    if not current_code:
+        flash("Please enter your session code first.", "error")
+        return redirect(url_for('enter_session'))
+    
+    # Ensure session code is set
+    session['session_code_id'] = current_code
+    session['intended_action'] = 'checkout'
+    
+    # Clear any previous scan results
+    from backend.utils.helpers import last_scan_results
+    last_scan_results.clear()
+    
+    return render_template('checkout_scan.html')
 
 # --- Route to start live face recognition scan ---
 @app.route('/scan/<int:camera_id>')
@@ -298,80 +473,77 @@ def generate_encodings():
 @app.route('/')
 def index():
     """
-    Home route where the camera feed interface is displayed.
-    Redirects users to session entry if no valid session code is found.
+    Home route redirects to the main session entry interface.
     """
-    if 'session_code_id' not in session:
-        flash("Please enter a valid session code first.", "error")
-        return redirect(url_for('enter_session'))
-    return render_template('index.html')
+    return redirect(url_for('enter_session'))
 
-# --- API Route to Get Employee Status ---
-@app.route('/api/employee_status/<reg_id>')
-def get_employee_status_api(reg_id):
+# --- API Route to Get Scan Result ---
+@app.route('/api/scan_result/<reg_id>')
+def get_scan_result_api(reg_id):
     """
-    API endpoint to get current employee status and session information.
+    API endpoint to get the result of the last scan for simple UI display.
     
     Args:
         reg_id (str): Employee registration ID
         
     Returns:
-        JSON response with current status, session info, and daily summary
+        JSON response with scan result message
     """
     from flask import jsonify
-    from datetime import date
+    from backend.utils.helpers import last_scan_results
     
     # Validate session
     if 'session_code_id' not in session:
         return jsonify({'error': 'Session not found'}), 401
     
-    session_code_id = int(session.get('session_code_id'))
-    today = date.today()
-    
     try:
-        # Get current status and daily summary
-        from backend.utils.helpers import get_employee_current_status, get_daily_time_summary
-        
-        next_action, sequence_num = get_employee_current_status(reg_id, session_code_id, today)
-        daily_summary = get_daily_time_summary(reg_id, session_code_id, today)
-        
-        # Get employee info
-        from backend.models import Student_data
-        with app.app_context():
-            employee = Student_data.query.filter_by(
-                regid=reg_id,
-                session_code_id=session_code_id
-            ).first()
-            
-            if not employee:
-                return jsonify({'error': 'Employee not found'}), 404
-            
-            response_data = {
-                'employee': {
-                    'reg_id': reg_id,
-                    'first_name': employee.first_name,
-                    'last_name': employee.last_name,
-                    'occupation': employee.occupation
-                },
-                'current_status': {
-                    'next_action': next_action,
-                    'next_sequence': sequence_num,
-                    'status': daily_summary.get('status', 'no_entries'),
-                    'last_action': daily_summary.get('last_action', 'none')
-                },
-                'daily_summary': {
-                    'total_hours': daily_summary.get('total_hours', 0),
-                    'total_sessions': len(daily_summary.get('sessions', [])),
-                    'sessions': daily_summary.get('sessions', [])
-                },
-                'date': today.isoformat()
-            }
-            
-            return jsonify(response_data)
+        # Get the last scan result for this employee
+        if reg_id in last_scan_results:
+            result = last_scan_results[reg_id]
+            return jsonify({
+                'success': True,
+                'message': result['message'],
+                'result': result['result'],
+                'employee_recognized': result['employee_recognized'],
+                'timestamp': result['timestamp'].isoformat() if result['timestamp'] else None
+            })
+        elif 'no_recognition' in last_scan_results:
+            # No face was recognized during the scan
+            result = last_scan_results['no_recognition']
+            return jsonify({
+                'success': False,
+                'message': result['message'],
+                'result': result['result'],
+                'employee_recognized': result['employee_recognized'],
+                'timestamp': result['timestamp'].isoformat() if result['timestamp'] else None
+            })
+        else:
+            # No result found - this shouldn't happen in normal operation
+            return jsonify({
+                'success': False,
+                'message': 'No scan result available. Please try again.',
+                'result': 'no_result',
+                'employee_recognized': False
+            })
             
     except Exception as e:
-        print(f"[ERROR] Employee status API failed: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        print(f"[ERROR] Scan result API failed: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error processing scan. Please try again.',
+            'result': 'error',
+            'employee_recognized': False
+        }), 500
+
+# --- API Route to Clear Scan Results (for testing) ---
+@app.route('/api/clear_scan_results')
+def clear_scan_results():
+    """Clear all scan results for testing purposes."""
+    from flask import jsonify
+    from backend.utils.helpers import last_scan_results
+    
+    last_scan_results.clear()
+    return jsonify({'success': True, 'message': 'Scan results cleared'})
 
 if __name__ == '__main__':
     """

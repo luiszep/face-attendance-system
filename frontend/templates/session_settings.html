@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Session Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-blue-900 via-gray-900 to-indigo-900 flex items-center justify-center text-white">
+
+  <div class="bg-white bg-opacity-10 backdrop-blur-md p-8 rounded-xl shadow-2xl w-full max-w-lg fade-in">
+    
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <h2 class="text-2xl font-semibold text-white">Session Settings</h2>
+      <p class="text-sm text-gray-300 mt-1">Manage your local session configuration</p>
+    </div>
+
+    {% if business_info and business_info.is_configured %}
+      <!-- Current Configuration Display -->
+      <div class="mb-6 p-4 bg-blue-600 bg-opacity-20 rounded-lg border border-blue-500">
+        <h3 class="text-lg font-medium text-blue-200 mb-2">Current Configuration</h3>
+        <div class="space-y-1 text-sm">
+          <p><span class="text-gray-300">Business Name:</span> <span class="text-white">{{ business_info.business_name or 'Not set' }}</span></p>
+          <p><span class="text-gray-300">Session Code:</span> <span class="text-white font-mono">{{ business_info.session_code }}</span></p>
+          <p><span class="text-gray-300">Setup Date:</span> <span class="text-white">{{ business_info.setup_date[:10] if business_info.setup_date else 'Unknown' }}</span></p>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Update Session Form -->
+    <form method="POST" class="mb-6">
+      <input type="hidden" name="action" value="update">
+      
+      <div class="mb-4">
+        <label class="block text-white text-sm font-medium mb-2">New Session Code</label>
+        <input
+          type="text"
+          name="new_session_code"
+          placeholder="Enter new session code (e.g., 123)"
+          value="{{ business_info.session_code if business_info and business_info.is_configured else '' }}"
+          required
+          class="w-full px-4 py-3 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-lg font-mono"
+        />
+      </div>
+      
+      <div class="mb-6">
+        <label class="block text-white text-sm font-medium mb-2">Business Name (Optional)</label>
+        <input
+          type="text"
+          name="business_name"
+          placeholder="Your business name"
+          value="{{ business_info.business_name if business_info and business_info.business_name else '' }}"
+          class="w-full px-4 py-2 rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+        />
+      </div>
+      
+      <button
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md transition-all duration-200 mb-4"
+      >
+        {{ 'Update Configuration' if business_info and business_info.is_configured else 'Save Configuration' }}
+      </button>
+    </form>
+
+    {% if business_info and business_info.is_configured %}
+      <!-- Clear Configuration -->
+      <form method="POST" class="mb-6">
+        <input type="hidden" name="action" value="clear">
+        <button
+          type="submit"
+          onclick="return confirm('Are you sure you want to clear the saved session code? You will need to enter it again.')"
+          class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-md transition-all duration-200"
+        >
+          Clear Saved Configuration
+        </button>
+      </form>
+    {% endif %}
+
+    <!-- Navigation -->
+    <div class="text-center space-y-2">
+      <a 
+        href="/Attendance_system/enter-session" 
+        class="text-blue-300 hover:text-blue-200 text-sm font-medium block"
+      >
+        ← Back to Attendance System
+      </a>
+      <a 
+        href="/Attendance_system/admin-logout" 
+        class="text-gray-400 hover:text-gray-300 text-xs"
+      >
+        Logout
+      </a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="mt-4">
+          {% for category, message in messages %}
+            <li class="text-sm font-medium {% if category == 'error' %}text-red-400{% else %}text-green-400{% endif %}">
+              {{ message }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <style>
+    .fade-in {
+      animation: fadeIn 0.7s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+
+</body>
+
+</html>
