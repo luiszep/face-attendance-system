@@ -70,15 +70,16 @@
     function handleSearchInput(e) {
         const searchTerm = e.target.value.toLowerCase();
         const list = document.getElementById('employeeList');
-        const buttons = list.querySelectorAll('button');
+        const forms = list.querySelectorAll('form');
         const createButtonWrapper = document.getElementById('createEmployeeWrapper');
         const noMsg = document.getElementById('noEmployeesMsg');
 
         let anyVisible = false;
-        buttons.forEach(btn => {
-        const text = btn.textContent.toLowerCase();
+        forms.forEach(form => {
+        const button = form.querySelector('button');
+        const text = button.textContent.toLowerCase();
         const matches = text.includes(searchTerm);
-        btn.style.display = matches ? 'block' : 'none';
+        form.style.display = matches ? 'block' : 'none';
         if (matches) anyVisible = true;
         });
 
