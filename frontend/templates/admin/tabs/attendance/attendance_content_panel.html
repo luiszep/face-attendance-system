@@ -1,0 +1,26 @@
+<!-- Content Panel Root -->
+<div class="flex flex-col h-full">
+    <!-- Scrollable Main Content Area -->
+    <div class="flex-1 overflow-y-auto space-y-6 scrollbar-hide px-4 pt-4 pb-6">
+      <div class="w-full max-w-6xl mx-auto">
+        {% set current_view = request.args.get('view', 'daily') %}
+        
+        {% if current_view == 'daily' %}
+          <!-- Daily Attendance View -->
+          {% include "admin/tabs/attendance/components/daily_attendance_cards.html" %}
+        {% elif current_view == 'weekly' %}
+          <!-- Weekly Attendance Summary -->
+          {% include "admin/tabs/attendance/components/weekly_attendance_summary.html" %}
+        {% elif current_view == 'monthly' %}
+          <!-- Monthly Attendance Summary -->
+          {% include "admin/tabs/attendance/components/monthly_attendance_summary.html" %}
+        {% elif current_view == 'custom' %}
+          <!-- Custom Range Attendance -->
+          {% include "admin/tabs/attendance/components/custom_range_attendance.html" %}
+        {% else %}
+          <!-- Default to Daily View -->
+          {% include "admin/tabs/attendance/components/daily_attendance_cards.html" %}
+        {% endif %}
+      </div>
+    </div>
+  </div>

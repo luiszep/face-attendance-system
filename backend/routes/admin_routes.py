@@ -87,6 +87,17 @@ def weekly_attendance():
         return render_template('admin/data.html', active_tab='weekly', business_name=business_name)
     return 'Unauthorized Access'
 
+# -- Attendance Results Tab --
+@admin_bp.route('/attendance')
+@login_required
+def attendance():
+    if current_user.role == 'admin':
+        session_id = session.get('session_code_id')
+        session_code_obj = SessionCode.query.get(session_id) if session_id else None
+        business_name = session_code_obj.business_name if session_code_obj else "Unknown Business"
+        return render_template('admin/data.html', active_tab='attendance', business_name=business_name)
+    return 'Unauthorized Access'
+
 # -- Custom Query Tab --
 @admin_bp.route('/query')
 @login_required

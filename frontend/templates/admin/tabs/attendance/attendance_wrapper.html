@@ -1,0 +1,12 @@
+<!-- Attendance Results Tab Layout -->
+<div id="attendance-results" class="flex flex-1 h-full w-full overflow-hidden">
+    <!-- Sidebar -->
+    <div class="w-64 shrink-0 bg-gray-900 border-r border-green-500/30">
+      {% include 'admin/tabs/attendance/attendance_sidebar.html' %}
+    </div>
+  
+    <!-- Content Panel -->
+    <div class="flex-1 p-6 overflow-y-auto scrollbar-hide">
+      {% include 'admin/tabs/attendance/attendance_content_panel.html' %}
+    </div>
+  </div>

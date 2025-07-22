@@ -55,6 +55,15 @@
            {% endif %}">
           Employee Database
         </a>
+        <a href="{{ url_for('admin_bp.attendance') }}"
+           class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
+           {% if active_tab == 'attendance' %}
+             border-cyan-500 text-cyan-400
+           {% else %}
+             border-transparent text-gray-300 hover:text-cyan-400
+           {% endif %}">
+          Attendance Results
+        </a>
         <a href="{{ url_for('admin_bp.weekly_attendance') }}"
            class="uppercase tracking-wide px-4 py-3 font-semibold text-sm border-b-2 transition-colors
            {% if active_tab == 'weekly' %}
@@ -80,6 +89,8 @@
     <div class="flex-1 overflow-y-auto">
       {% if active_tab == 'employee' %}
         {% include 'admin/tabs/employee/employee_wrapper.html' %}
+      {% elif active_tab == 'attendance' %}
+        {% include 'admin/tabs/attendance/attendance_wrapper.html' %}
       {% elif active_tab == 'weekly' %}
         {% include 'admin/tabs/weekly_attendance.html' %}
       {% elif active_tab == 'query' %}
