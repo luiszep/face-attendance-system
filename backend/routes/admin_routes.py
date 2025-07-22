@@ -9,6 +9,7 @@ import os
 import csv
 import io
 import logging
+import datetime
 
 # Define the admin blueprint
 admin_bp = Blueprint('admin_bp', __name__)
@@ -91,12 +92,119 @@ def weekly_attendance():
 @admin_bp.route('/attendance')
 @login_required
 def attendance():
-    if current_user.role == 'admin':
-        session_id = session.get('session_code_id')
-        session_code_obj = SessionCode.query.get(session_id) if session_id else None
-        business_name = session_code_obj.business_name if session_code_obj else "Unknown Business"
-        return render_template('admin/data.html', active_tab='attendance', business_name=business_name)
-    return 'Unauthorized Access'
+    if current_user.role != 'admin':
+        return 'Unauthorized Access'
+    
+    session_id = session.get('session_code_id')
+    if not session_id:
+        flash("Session expired or unauthorized access.", "error")
+        return redirect(url_for('auth_bp.login'))
+    
+    session_code_obj = SessionCode.query.get(session_id)
+    business_name = session_code_obj.business_name if session_code_obj else "Unknown Business"
+    
+    # Get filter parameters
+    current_view = request.args.get('view', 'daily')
+    selected_date = request.args.get('date', datetime.date.today().strftime('%Y-%m-%d'))
+    name_filter = request.args.get('name', '')
+    id_filter = request.args.get('id', '')
+    occupation_filter = request.args.get('occupation', '')
+    
+    # Initialize attendance_data as empty
+    attendance_data = []
+    
+    # Only fetch data for daily view for now
+    if current_view == 'daily':
+        from sqlalchemy import and_
+        from backend.models import TimeEntry
+        
+        try:
+            # Parse the selected date
+            date_obj = datetime.datetime.strptime(selected_date, '%Y-%m-%d').date()
+            
+            # Build filters for Attendance table
+            attendance_filters = [
+                Attendance.session_code_id == session_id,
+                Attendance.date == date_obj
+            ]
+            
+            # Add search filters
+            if name_filter:
+                attendance_filters.append(
+                    db.or_(
+                        Attendance.first_name.ilike(f"%{name_filter}%"),
+                        Attendance.last_name.ilike(f"%{name_filter}%")
+                    )
+                )
+            if id_filter:
+                attendance_filters.append(Attendance.reg_id.ilike(f"%{id_filter}%"))
+            if occupation_filter:
+                attendance_filters.append(Attendance.occupation.ilike(f"%{occupation_filter}%"))
+            
+            # Query Attendance table for daily summaries
+            attendance_records = Attendance.query.filter(and_(*attendance_filters)).all()
+            
+            # For each attendance record, get corresponding TimeEntry records
+            for attendance_record in attendance_records:
+                # Get TimeEntry records for this employee on this date
+                time_entries = TimeEntry.query.filter(
+                    and_(
+                        TimeEntry.reg_id == attendance_record.reg_id,
+                        TimeEntry.session_code_id == session_id,
+                        TimeEntry.date == date_obj
+                    )
+                ).order_by(TimeEntry.timestamp.asc()).all()
+                
+                # Calculate total hours from time entries
+                total_hours = 0
+                current_checkin = None
+                
+                for entry in time_entries:
+                    if entry.entry_type == 'check_in':
+                        current_checkin = entry.timestamp
+                    elif entry.entry_type == 'check_out' and current_checkin:
+                        # Calculate hours for this session
+                        time_diff = entry.timestamp - current_checkin
+                        session_hours = time_diff.total_seconds() / 3600
+                        total_hours += session_hours
+                        current_checkin = None
+                
+                # Prepare data structure
+                employee_data = {
+                    'reg_id': attendance_record.reg_id,
+                    'first_name': attendance_record.first_name,
+                    'last_name': attendance_record.last_name,
+                    'occupation': attendance_record.occupation,
+                    'start_time': attendance_record.start_time,
+                    'end_time': attendance_record.end_time,
+                    'date': attendance_record.date.strftime('%Y-%m-%d'),
+                    'total_hours': round(total_hours, 2),
+                    'time_entries': []
+                }
+                
+                # Add time entries with proper formatting
+                for entry in time_entries:
+                    employee_data['time_entries'].append({
+                        'entry_type': entry.entry_type,
+                        'sequence_number': entry.sequence_number,
+                        'timestamp': entry.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                    })
+                
+                attendance_data.append(employee_data)
+                
+        except ValueError:
+            flash("Invalid date format.", "error")
+        except Exception as e:
+            flash(f"Error fetching attendance data: {str(e)}", "error")
+    
+    return render_template(
+        'admin/data.html', 
+        active_tab='attendance', 
+        business_name=business_name,
+        attendance_data=attendance_data,
+        selected_date=selected_date,
+        current_view=current_view
+    )
 
 # -- Custom Query Tab --
 @admin_bp.route('/query')

@@ -83,31 +83,57 @@
             Select Month
           {% endif %}
         </label>
-        <input type="date" value="2024-07-22" 
-               class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+        <form method="get" action="{{ url_for('admin_bp.attendance') }}" id="dateForm">
+          <!-- Preserve current filters -->
+          <input type="hidden" name="view" value="{{ current_view }}">
+          <input type="hidden" name="name" value="{{ request.args.get('name', '') }}">
+          <input type="hidden" name="id" value="{{ request.args.get('id', '') }}">
+          <input type="hidden" name="occupation" value="{{ request.args.get('occupation', '') }}">
+          
+          <input type="date" 
+                 name="date"
+                 value="{{ request.args.get('date', '') }}" 
+                 onchange="document.getElementById('dateForm').submit()"
+                 class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
+        </form>
       {% endif %}
     </div>
 
     <!-- 🔍 Advanced Search Filters -->
     <div class="mb-4">
       <label class="block text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Advanced Filters</label>
-      <div class="space-y-2">
-        <input
-          type="text"
-          placeholder="Search by name..."
-          class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-        />
-        <input
-          type="text"
-          placeholder="Search by ID..."
-          class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-        />
-        <input
-          type="text"
-          placeholder="Search by occupation..."
-          class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-        />
-      </div>
+      <form method="get" action="{{ url_for('admin_bp.attendance') }}" id="filterForm">
+        <!-- Preserve current view and date -->
+        <input type="hidden" name="view" value="{{ request.args.get('view', 'daily') }}">
+        <input type="hidden" name="date" value="{{ request.args.get('date', '') }}">
+        
+        <div class="space-y-2">
+          <input
+            type="text"
+            name="name"
+            placeholder="Search by name..."
+            value="{{ request.args.get('name', '') }}"
+            onchange="document.getElementById('filterForm').submit()"
+            class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+          />
+          <input
+            type="text"
+            name="id"
+            placeholder="Search by ID..."
+            value="{{ request.args.get('id', '') }}"
+            onchange="document.getElementById('filterForm').submit()"
+            class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+          />
+          <input
+            type="text"
+            name="occupation"
+            placeholder="Search by occupation..."
+            value="{{ request.args.get('occupation', '') }}"
+            onchange="document.getElementById('filterForm').submit()"
+            class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+          />
+        </div>
+      </form>
     </div>
 
     <!-- Quick Filters -->
