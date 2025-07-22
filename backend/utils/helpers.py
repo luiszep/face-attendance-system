@@ -275,23 +275,24 @@ def record_time_entry(first_name, last_name, occupation, regular_wage, current_d
             with app.app_context():
                 current_time = datetime.now()
                 
-                # Extended deduplication check - 60 seconds to handle camera stream bursts
+                # Extended deduplication check - 5 minutes to prevent accidental re-scans
                 recent_entry = TimeEntry.query.filter_by(
                     reg_id=reg_id,
                     session_code_id=session_code_id,
                     date=current_date
                 ).filter(
-                    TimeEntry.timestamp >= current_time - timedelta(seconds=60)
+                    TimeEntry.timestamp >= current_time - timedelta(minutes=5)
                 ).order_by(TimeEntry.timestamp.desc()).first()
                 
                 if recent_entry:
                     time_diff = (current_time - recent_entry.timestamp).total_seconds()
-                    print(f"[NEW SYSTEM] Blocked - entry exists from {time_diff:.1f}s ago ({recent_entry.entry_type}#{recent_entry.sequence_number})")
+                    time_diff_minutes = time_diff / 60
+                    print(f"[NEW SYSTEM] Blocked - entry exists from {time_diff_minutes:.1f} minutes ago ({recent_entry.entry_type}#{recent_entry.sequence_number})")
                     
                     # Store result for simple UI
                     last_scan_results[reg_id] = {
                         'result': 'blocked',
-                        'message': f"{first_name} {last_name} ({reg_id}) - No time recorded (too soon after last scan)",
+                        'message': f"{first_name} {last_name} ({reg_id}) - Please wait {5 - int(time_diff_minutes)} more minutes before scanning again",
                         'timestamp': current_time,
                         'employee_recognized': True
                     }
