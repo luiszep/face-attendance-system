@@ -141,8 +141,8 @@ def attendance():
             if occupation_filter:
                 attendance_filters.append(Attendance.occupation.ilike(f"%{occupation_filter}%"))
             
-            # Query Attendance table for daily summaries
-            attendance_records = Attendance.query.filter(and_(*attendance_filters)).all()
+            # Query Attendance table for daily summaries, ordered by first seen (start_time)
+            attendance_records = Attendance.query.filter(and_(*attendance_filters)).order_by(Attendance.start_time.asc()).all()
             
             # For each attendance record, get corresponding TimeEntry records
             for attendance_record in attendance_records:
