@@ -13,11 +13,47 @@
 
 <!-- Quick Filters JavaScript -->
 <script>
+// Helper function to update Quick Filter state in forms before submission
+function updateQuickFilterStateInForm(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    
+    const showPresentCheckbox = document.getElementById('show-present');
+    const showAbsentCheckbox = document.getElementById('show-absent');
+    const showIncompleteCheckbox = document.getElementById('show-incomplete');
+    
+    // Update hidden inputs with current checkbox states
+    const presentInput = form.querySelector('input[name="show_present"]');
+    const absentInput = form.querySelector('input[name="show_absent"]');
+    const incompleteInput = form.querySelector('input[name="show_incomplete"]');
+    
+    if (presentInput && showPresentCheckbox) {
+        presentInput.value = showPresentCheckbox.checked ? 'true' : 'false';
+    }
+    if (absentInput && showAbsentCheckbox) {
+        absentInput.value = showAbsentCheckbox.checked ? 'true' : 'false';
+    }
+    if (incompleteInput && showIncompleteCheckbox) {
+        incompleteInput.value = showIncompleteCheckbox.checked ? 'true' : 'false';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const showPresentCheckbox = document.getElementById('show-present');
     const showAbsentCheckbox = document.getElementById('show-absent');
     const showIncompleteCheckbox = document.getElementById('show-incomplete');
     const attendanceCards = document.querySelectorAll('.attendance-card');
+    
+    // Restore Quick Filter state from backend/URL parameters
+    {% if show_present is defined %}
+        if (showPresentCheckbox) showPresentCheckbox.checked = {{ 'true' if show_present else 'false' }};
+    {% endif %}
+    {% if show_absent is defined %}
+        if (showAbsentCheckbox) showAbsentCheckbox.checked = {{ 'true' if show_absent else 'false' }};
+    {% endif %}
+    {% if show_incomplete is defined %}
+        if (showIncompleteCheckbox) showIncompleteCheckbox.checked = {{ 'true' if show_incomplete else 'false' }};
+    {% endif %}
     
     function updateCardVisibility() {
         const showPresent = showPresentCheckbox.checked;

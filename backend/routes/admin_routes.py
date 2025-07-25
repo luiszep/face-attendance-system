@@ -110,6 +110,11 @@ def attendance():
     id_filter = request.args.get('id', '')
     occupation_filter = request.args.get('occupation', '')
     
+    # Get Quick Filter parameters
+    show_present = request.args.get('show_present', 'true') == 'true'
+    show_absent = request.args.get('show_absent', 'false') == 'true'
+    show_incomplete = request.args.get('show_incomplete', 'false') == 'true'
+    
     # Initialize attendance_data as empty
     attendance_data = []
     absent_employees = []
@@ -233,7 +238,10 @@ def attendance():
         attendance_data=attendance_data,
         absent_employees=absent_employees,
         selected_date=selected_date,
-        current_view=current_view
+        current_view=current_view,
+        show_present=show_present,
+        show_absent=show_absent,
+        show_incomplete=show_incomplete
     )
 
 # -- Custom Query Tab --

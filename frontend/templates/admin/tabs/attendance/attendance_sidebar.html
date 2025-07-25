@@ -90,10 +90,15 @@
           <input type="hidden" name="id" value="{{ request.args.get('id', '') }}">
           <input type="hidden" name="occupation" value="{{ request.args.get('occupation', '') }}">
           
+          <!-- Preserve Quick Filter state -->
+          <input type="hidden" name="show_present" value="{{ request.args.get('show_present', 'true') }}">
+          <input type="hidden" name="show_absent" value="{{ request.args.get('show_absent', 'false') }}">
+          <input type="hidden" name="show_incomplete" value="{{ request.args.get('show_incomplete', 'false') }}">
+          
           <input type="date" 
                  name="date"
                  value="{{ request.args.get('date', '') }}" 
-                 onchange="document.getElementById('dateForm').submit()"
+                 onchange="updateQuickFilterStateInForm('dateForm'); document.getElementById('dateForm').submit()"
                  class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors">
         </form>
       {% endif %}
@@ -107,13 +112,18 @@
         <input type="hidden" name="view" value="{{ request.args.get('view', 'daily') }}">
         <input type="hidden" name="date" value="{{ request.args.get('date', '') }}">
         
+        <!-- Preserve Quick Filter state -->
+        <input type="hidden" name="show_present" value="{{ request.args.get('show_present', 'true') }}">
+        <input type="hidden" name="show_absent" value="{{ request.args.get('show_absent', 'false') }}">
+        <input type="hidden" name="show_incomplete" value="{{ request.args.get('show_incomplete', 'false') }}">
+        
         <div class="space-y-2">
           <input
             type="text"
             name="name"
             placeholder="Search by name..."
             value="{{ request.args.get('name', '') }}"
-            onchange="document.getElementById('filterForm').submit()"
+            onchange="updateQuickFilterStateInForm('filterForm'); document.getElementById('filterForm').submit()"
             class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
           />
           <input
@@ -121,7 +131,7 @@
             name="id"
             placeholder="Search by ID..."
             value="{{ request.args.get('id', '') }}"
-            onchange="document.getElementById('filterForm').submit()"
+            onchange="updateQuickFilterStateInForm('filterForm'); document.getElementById('filterForm').submit()"
             class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
           />
           <input
@@ -129,7 +139,7 @@
             name="occupation"
             placeholder="Search by occupation..."
             value="{{ request.args.get('occupation', '') }}"
-            onchange="document.getElementById('filterForm').submit()"
+            onchange="updateQuickFilterStateInForm('filterForm'); document.getElementById('filterForm').submit()"
             class="w-full px-3 py-2 border border-cyan-500/30 rounded-lg text-sm text-white placeholder-gray-400 bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
           />
         </div>
