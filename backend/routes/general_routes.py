@@ -196,7 +196,7 @@ def edit_employee():
     regid = request.form.get('regid')
     session_id = session.get('session_code_id')
 
-    employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
+    employee = Student_data.query.filter(Student_data.regid.ilike(regid), Student_data.session_code_id == session_id).first()
 
     if not employee:
         flash("Employee not found.", "error")
@@ -232,7 +232,7 @@ def delete_employee():
         return redirect(url_for('admin_bp.data', active_tab='employee'))
 
     # Step 1: Delete employee record
-    employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
+    employee = Student_data.query.filter(Student_data.regid.ilike(regid), Student_data.session_code_id == session_id).first()
     if employee:
         db.session.delete(employee)
         db.session.commit()

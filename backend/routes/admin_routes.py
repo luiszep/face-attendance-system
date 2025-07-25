@@ -39,7 +39,7 @@ def data():
     images = []
     for entry in image_entries:
         regid = entry['filename'].rsplit('.', 1)[0].upper()
-        employee = Student_data.query.filter_by(regid=regid, session_code_id=session_id).first()
+        employee = Student_data.query.filter(Student_data.regid.ilike(regid), Student_data.session_code_id == session_id).first()
         images.append({
             'filename': entry['filename'],
             'url': entry['url'],
@@ -54,9 +54,9 @@ def data():
     # NEW: If an edit_regid is passed, fetch the corresponding employee
     employee_to_edit = None
     if edit_regid:
-        employee_to_edit = Student_data.query.filter_by(
-            regid=edit_regid.upper(),
-            session_code_id=session_id
+        employee_to_edit = Student_data.query.filter(
+            Student_data.regid.ilike(edit_regid),
+            Student_data.session_code_id == session_id
         ).first()
 
     # Fetch all employees for the current session
@@ -155,7 +155,7 @@ def attendance():
                 # Get TimeEntry records for this employee on this date
                 time_entries = TimeEntry.query.filter(
                     and_(
-                        TimeEntry.reg_id == attendance_record.reg_id,
+                        TimeEntry.reg_id.ilike(attendance_record.reg_id),
                         TimeEntry.session_code_id == session_id,
                         TimeEntry.date == date_obj
                     )
@@ -203,7 +203,7 @@ def attendance():
             all_employees = Student_data.query.filter_by(session_code_id=session_id).all()
             
             for employee in all_employees:
-                if employee.regid not in present_reg_ids:
+                if not any(emp_id.upper() == employee.regid.upper() for emp_id in present_reg_ids):
                     # Apply name filters to absent employees too
                     if name_filter and not (name_filter.lower() in employee.first_name.lower() or name_filter.lower() in employee.last_name.lower()):
                         continue
@@ -281,9 +281,9 @@ def add_user():
     maximum_overtime_hours = int(maximum_overtime_hours) if maximum_overtime_hours else None
     regid = request.form['reg_id']
     # Check for duplicate
-    existing_student = Student_data.query.filter_by(
-        regid=regid,
-        session_code_id=session['session_code_id']
+    existing_student = Student_data.query.filter(
+        Student_data.regid.ilike(regid),
+        Student_data.session_code_id == session['session_code_id']
     ).first()
     if existing_student:
         flash('Student already exists!', 'error')

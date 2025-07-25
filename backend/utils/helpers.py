@@ -86,9 +86,9 @@ def mysqlconnect(student_id, session_code_id):
         return (None,)*8
     try:
         with app.app_context():
-            student_data = Student_data.query.filter_by(
-                regid=student_id,
-                session_code_id=session_code_id
+            student_data = Student_data.query.filter(
+                Student_data.regid.ilike(student_id),
+                Student_data.session_code_id == session_code_id
             ).first()
             if student_data:
                 return (
@@ -160,10 +160,10 @@ def record_attendance_old_system(first_name, last_name, occupation, regular_wage
     try:
         with app.app_context():
             # Check if an attendance entry already exists for this student on this date/session
-            existing_entry = Attendance.query.filter_by(
-                reg_id=reg_id,
-                date=current_date,
-                session_code_id=session_code_id
+            existing_entry = Attendance.query.filter(
+                Attendance.reg_id.ilike(reg_id),
+                Attendance.date == current_date,
+                Attendance.session_code_id == session_code_id
             ).first()
             current_time_str = datetime.now().strftime("%H:%M:%S")
             if existing_entry:
@@ -217,10 +217,10 @@ def get_employee_current_status(reg_id, session_code_id, current_date):
     try:
         with app.app_context():
             # Get the latest entry for this employee today
-            latest_entry = TimeEntry.query.filter_by(
-                reg_id=reg_id,
-                session_code_id=session_code_id,
-                date=current_date
+            latest_entry = TimeEntry.query.filter(
+                TimeEntry.reg_id.ilike(reg_id),
+                TimeEntry.session_code_id == session_code_id,
+                TimeEntry.date == current_date
             ).order_by(TimeEntry.timestamp.desc()).first()
             
             if not latest_entry:
@@ -276,11 +276,10 @@ def record_time_entry(first_name, last_name, occupation, regular_wage, current_d
                 current_time = datetime.now()
                 
                 # Extended deduplication check - 5 minutes to prevent accidental re-scans
-                recent_entry = TimeEntry.query.filter_by(
-                    reg_id=reg_id,
-                    session_code_id=session_code_id,
-                    date=current_date
-                ).filter(
+                recent_entry = TimeEntry.query.filter(
+                    TimeEntry.reg_id.ilike(reg_id),
+                    TimeEntry.session_code_id == session_code_id,
+                    TimeEntry.date == current_date,
                     TimeEntry.timestamp >= current_time - timedelta(minutes=5)
                 ).order_by(TimeEntry.timestamp.desc()).first()
                 
@@ -302,12 +301,12 @@ def record_time_entry(first_name, last_name, occupation, regular_wage, current_d
                 action, sequence_num = get_employee_current_status(reg_id, session_code_id, current_date)
                 
                 # Final safety check for exact duplicates
-                existing_duplicate = TimeEntry.query.filter_by(
-                    reg_id=reg_id,
-                    session_code_id=session_code_id,
-                    date=current_date,
-                    sequence_number=sequence_num,
-                    entry_type=action
+                existing_duplicate = TimeEntry.query.filter(
+                    TimeEntry.reg_id.ilike(reg_id),
+                    TimeEntry.session_code_id == session_code_id,
+                    TimeEntry.date == current_date,
+                    TimeEntry.sequence_number == sequence_num,
+                    TimeEntry.entry_type == action
                 ).first()
                 
                 if existing_duplicate:
@@ -388,10 +387,10 @@ def get_daily_time_summary(reg_id, session_code_id, target_date):
     
     try:
         with app.app_context():
-            entries = TimeEntry.query.filter_by(
-                reg_id=reg_id,
-                session_code_id=session_code_id,
-                date=target_date
+            entries = TimeEntry.query.filter(
+                TimeEntry.reg_id.ilike(reg_id),
+                TimeEntry.session_code_id == session_code_id,
+                TimeEntry.date == target_date
             ).order_by(TimeEntry.timestamp.asc()).all()
             
             if not entries:
@@ -477,10 +476,10 @@ def compare_system_results(reg_id, session_code_id, target_date):
     try:
         with app.app_context():
             # Get old system data
-            old_entry = Attendance.query.filter_by(
-                reg_id=reg_id,
-                session_code_id=session_code_id,
-                date=target_date
+            old_entry = Attendance.query.filter(
+                Attendance.reg_id.ilike(reg_id),
+                Attendance.session_code_id == session_code_id,
+                Attendance.date == target_date
             ).first()
             
             # Get new system data
