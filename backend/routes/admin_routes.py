@@ -112,11 +112,12 @@ def attendance():
     
     # Initialize attendance_data as empty
     attendance_data = []
+    absent_employees = []
     
     # Only fetch data for daily view for now
     if current_view == 'daily':
         from sqlalchemy import and_
-        from backend.models import TimeEntry
+        from backend.models import TimeEntry, Student_data
         
         try:
             # Parse the selected date
@@ -191,6 +192,34 @@ def attendance():
                     })
                 
                 attendance_data.append(employee_data)
+            
+            # Find absent employees (those with no attendance record for this date)
+            present_reg_ids = {emp['reg_id'] for emp in attendance_data}
+            all_employees = Student_data.query.filter_by(session_code_id=session_id).all()
+            
+            for employee in all_employees:
+                if employee.regid not in present_reg_ids:
+                    # Apply name filters to absent employees too
+                    if name_filter and not (name_filter.lower() in employee.first_name.lower() or name_filter.lower() in employee.last_name.lower()):
+                        continue
+                    if id_filter and id_filter.lower() not in employee.regid.lower():
+                        continue
+                    if occupation_filter and occupation_filter.lower() not in employee.occupation.lower():
+                        continue
+                    
+                    absent_employee = {
+                        'reg_id': employee.regid,
+                        'first_name': employee.first_name,
+                        'last_name': employee.last_name,
+                        'occupation': employee.occupation,
+                        'start_time': None,
+                        'end_time': None,
+                        'date': selected_date,
+                        'total_hours': 0,
+                        'time_entries': [],
+                        'is_absent': True
+                    }
+                    absent_employees.append(absent_employee)
                 
         except ValueError:
             flash("Invalid date format.", "error")
@@ -202,6 +231,7 @@ def attendance():
         active_tab='attendance', 
         business_name=business_name,
         attendance_data=attendance_data,
+        absent_employees=absent_employees,
         selected_date=selected_date,
         current_view=current_view
     )

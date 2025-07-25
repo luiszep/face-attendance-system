@@ -5,16 +5,34 @@
 
 <div class="bg-gray-900 rounded-2xl shadow-2xl border border-cyan-500/30 p-6 mb-6">
   <h1 class="text-3xl font-bold text-cyan-400 mb-2">Daily Attendance Results</h1>
-  <p class="text-gray-300">{{ selected_date }} - Showing {{ attendance_data|length }} employees</p>
+  <p class="text-gray-300">{{ selected_date }} - Showing {{ (attendance_data|length + absent_employees|length) }} employees</p>
 </div>
 
 <!-- Employee Attendance Cards Container -->
-<div class="space-y-6">
+<div id="attendance-cards-container" class="space-y-6">
   
-  {% if attendance_data %}
-    {% for employee in attendance_data %}
-      <!-- Employee Card -->
-      <div class="bg-gray-900 rounded-2xl shadow-2xl border border-cyan-500/30 p-6">
+  <!-- Present Employees -->
+  {% for employee in attendance_data %}
+    {% set has_incomplete = false %}
+    {% set current_pair = [] %}
+    {% for entry in employee.time_entries %}
+      {% if entry.entry_type == 'check_in' %}
+        {% set _ = current_pair.append(entry) %}
+      {% elif entry.entry_type == 'check_out' and current_pair %}
+        {% set _ = current_pair.clear() %}
+      {% endif %}
+    {% endfor %}
+    {% if current_pair %}
+      {% set has_incomplete = true %}
+    {% endif %}
+    
+    <!-- Present Employee Card -->
+    <div class="attendance-card bg-gray-900 rounded-2xl shadow-2xl border border-cyan-500/30 p-6" 
+         data-status="present" 
+         data-incomplete="{{ 'true' if has_incomplete else 'false' }}" 
+         data-reg-id="{{ employee.reg_id }}"
+         data-name="{{ employee.first_name }} {{ employee.last_name }}"
+         data-occupation="{{ employee.occupation }}">
         <!-- Employee Header -->
         <div class="flex items-start justify-between mb-4">
           <div class="flex items-center space-x-4">
@@ -98,7 +116,50 @@
         </div>
       </div>
     {% endfor %}
-  {% else %}
+  
+  <!-- Absent Employees -->
+  {% for employee in absent_employees %}
+    <!-- Absent Employee Card -->
+    <div class="attendance-card bg-gray-900 rounded-2xl shadow-2xl border border-red-500/30 p-6" 
+         data-status="absent" 
+         data-incomplete="false" 
+         data-reg-id="{{ employee.reg_id }}"
+         data-name="{{ employee.first_name }} {{ employee.last_name }}"
+         data-occupation="{{ employee.occupation }}"
+         style="display: none;">
+      <!-- Employee Header -->
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+            <span class="text-white font-bold text-lg">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</span>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold text-white">{{ employee.last_name }}, {{ employee.first_name }}</h3>
+            <p class="text-gray-400">{{ employee.occupation }} • ID: {{ employee.reg_id }}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-2xl font-bold text-red-400">ABSENT</div>
+          <p class="text-xs text-gray-400">No Check-in</p>
+        </div>
+      </div>
+
+      <!-- Absent Status -->
+      <div class="bg-red-900/20 rounded-lg p-4 border border-red-500/20">
+        <div class="text-center">
+          <div class="text-red-400 mb-2">
+            <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+          </div>
+          <h4 class="text-sm font-semibold text-white mb-1">No Attendance Record</h4>
+          <p class="text-xs text-gray-400">Employee did not check in on {{ selected_date }}</p>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  
+  {% if not attendance_data and not absent_employees %}
     <!-- No Results -->
     <div class="bg-gray-900 rounded-2xl shadow-2xl border border-gray-500/30 p-8 text-center">
       <div class="text-gray-400 mb-4">

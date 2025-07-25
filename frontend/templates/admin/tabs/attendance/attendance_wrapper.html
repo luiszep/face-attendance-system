@@ -10,3 +10,75 @@
       {% include 'admin/tabs/attendance/attendance_content_panel.html' %}
     </div>
   </div>
+
+<!-- Quick Filters JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const showPresentCheckbox = document.getElementById('show-present');
+    const showAbsentCheckbox = document.getElementById('show-absent');
+    const showIncompleteCheckbox = document.getElementById('show-incomplete');
+    const attendanceCards = document.querySelectorAll('.attendance-card');
+    
+    function updateCardVisibility() {
+        const showPresent = showPresentCheckbox.checked;
+        const showAbsent = showAbsentCheckbox.checked;
+        const showIncomplete = showIncompleteCheckbox.checked;
+        
+        let visibleCount = 0;
+        
+        attendanceCards.forEach(card => {
+            const status = card.dataset.status;
+            const hasIncomplete = card.dataset.incomplete === 'true';
+            
+            let shouldShow = false;
+            
+            // Determine if card should be shown based on filters
+            if (status === 'present') {
+                if (showIncomplete && !showPresent) {
+                    // Only show incomplete checkouts
+                    shouldShow = hasIncomplete;
+                } else if (showPresent && !showIncomplete) {
+                    // Show all present employees
+                    shouldShow = true;
+                } else if (showPresent && showIncomplete) {
+                    // Show all present employees (incomplete filter doesn't restrict when present is on)
+                    shouldShow = true;
+                } else {
+                    // Neither present nor incomplete selected, don't show present employees
+                    shouldShow = false;
+                }
+            } else if (status === 'absent') {
+                shouldShow = showAbsent;
+            }
+            
+            if (shouldShow) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Update the header count if it exists
+        const headerElement = document.querySelector('.text-gray-300');
+        if (headerElement && headerElement.textContent.includes('Showing')) {
+            const dateText = headerElement.textContent.split(' - ')[0];
+            headerElement.textContent = `${dateText} - Showing ${visibleCount} employees`;
+        }
+    }
+    
+    // Add event listeners to checkboxes
+    if (showPresentCheckbox) {
+        showPresentCheckbox.addEventListener('change', updateCardVisibility);
+    }
+    if (showAbsentCheckbox) {
+        showAbsentCheckbox.addEventListener('change', updateCardVisibility);
+    }
+    if (showIncompleteCheckbox) {
+        showIncompleteCheckbox.addEventListener('change', updateCardVisibility);
+    }
+    
+    // Initial call to set correct visibility
+    updateCardVisibility();
+});
+</script>
