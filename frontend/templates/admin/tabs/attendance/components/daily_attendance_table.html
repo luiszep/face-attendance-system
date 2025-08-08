@@ -5,8 +5,24 @@
 {% set selected_date = selected_date or 'Today' %}
 
 <div class="bg-gray-900 rounded-2xl shadow-2xl border border-cyan-500/30 p-6 mb-6">
-  <h1 class="text-3xl font-bold text-cyan-400 mb-2">Daily Attendance Results</h1>
-  <p class="text-gray-300">{{ selected_date }} - Showing {{ (attendance_data|length + absent_employees|length) }} employees</p>
+  <div class="flex justify-between items-start">
+    <div>
+      <h1 class="text-3xl font-bold text-cyan-400 mb-2">Daily Attendance Results</h1>
+      <p class="text-gray-300">{{ selected_date }} - Showing {{ (attendance_data|length + absent_employees|length) }} employees</p>
+    </div>
+    <form action="{{ url_for('admin_bp.download_daily_attendance_csv') }}" method="post">
+      <input type="hidden" name="selected_date" value="{{ selected_date }}">
+      <input type="hidden" name="show_present" value="{{ request.args.get('show_present', 'true') }}">
+      <input type="hidden" name="show_absent" value="{{ request.args.get('show_absent', 'false') }}">
+      <input type="hidden" name="show_incomplete" value="{{ request.args.get('show_incomplete', 'false') }}">
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold transition-all flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        Download CSV
+      </button>
+    </form>
+  </div>
 </div>
 
 <!-- Attendance Table Container -->

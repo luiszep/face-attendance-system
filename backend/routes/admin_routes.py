@@ -430,3 +430,155 @@ def download_attendance_csv():
         logging.exception("Error generating CSV file: %s", str(e))
         flash("An error occurred while generating the CSV file.")
         return redirect(url_for('general_bp.get_attendance'))
+
+# -- Download Daily Attendance CSV Route --
+@admin_bp.route('/download_daily_attendance_csv', methods=['POST'])
+def download_daily_attendance_csv():
+    """
+    Download the daily attendance records as CSV based on current filters.
+    """
+    from flask import Response
+    import io
+    import csv
+    from datetime import datetime
+    from sqlalchemy import and_
+    from backend.models import TimeEntry, Student_data
+
+    if 'session_code_id' not in session:
+        flash("Session expired or unauthorized access.", "error")
+        return redirect(url_for('auth_bp.login'))
+
+    try:
+        session_id = session['session_code_id']
+        
+        # Get filter parameters
+        selected_date = request.form.get('selected_date', datetime.today().strftime('%Y-%m-%d'))
+        show_present = request.form.get('show_present', 'true') == 'true'
+        show_absent = request.form.get('show_absent', 'false') == 'true'
+        show_incomplete = request.form.get('show_incomplete', 'false') == 'true'
+        
+        # Parse the selected date
+        date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        
+        # Get attendance records for the selected date
+        attendance_records = Attendance.query.filter(
+            and_(
+                Attendance.session_code_id == session_id,
+                Attendance.date == date_obj
+            )
+        ).all()
+        
+        # Process attendance data
+        attendance_data = []
+        for attendance_record in attendance_records:
+            # Get all time entries for this employee on this date
+            time_entries = TimeEntry.query.filter(
+                and_(
+                    TimeEntry.reg_id == attendance_record.reg_id,
+                    TimeEntry.date == date_obj,
+                    TimeEntry.session_code_id == session_id
+                )
+            ).order_by(TimeEntry.sequence_number).all()
+            
+            # Calculate total hours
+            total_hours = 0
+            if attendance_record.start_time and attendance_record.end_time:
+                # Convert string times to datetime.time objects
+                if isinstance(attendance_record.start_time, str):
+                    start_time = datetime.strptime(attendance_record.start_time, '%H:%M:%S').time()
+                else:
+                    start_time = attendance_record.start_time
+                    
+                if isinstance(attendance_record.end_time, str):
+                    end_time = datetime.strptime(attendance_record.end_time, '%H:%M:%S').time()
+                else:
+                    end_time = attendance_record.end_time
+                    
+                start_datetime = datetime.combine(date_obj, start_time)
+                end_datetime = datetime.combine(date_obj, end_time)
+                total_hours = (end_datetime - start_datetime).total_seconds() / 3600
+            
+            # Check if incomplete (has check-in but no check-out)
+            has_incomplete = False
+            current_pair = []
+            for entry in time_entries:
+                if entry.entry_type == 'check_in':
+                    current_pair.append(entry)
+                elif entry.entry_type == 'check_out' and current_pair:
+                    current_pair.clear()
+            if current_pair:
+                has_incomplete = True
+            
+            # Build employee data
+            employee_data = {
+                'reg_id': attendance_record.reg_id,
+                'first_name': attendance_record.first_name,
+                'last_name': attendance_record.last_name,
+                'occupation': attendance_record.occupation,
+                'start_time': start_time.strftime('%H:%M') if attendance_record.start_time else '-',
+                'end_time': end_time.strftime('%H:%M') if attendance_record.end_time else '-',
+                'total_hours': round(total_hours, 2),
+                'status': 'Incomplete' if has_incomplete else 'Complete',
+                'sessions': len([e for e in time_entries if e.entry_type == 'check_out'])
+            }
+            
+            # Apply filters
+            if (show_present and not has_incomplete) or (show_incomplete and has_incomplete):
+                attendance_data.append(employee_data)
+        
+        # Find absent employees
+        absent_employees = []
+        if show_absent:
+            present_reg_ids = {emp['reg_id'] for emp in attendance_data}
+            all_employees = Student_data.query.filter_by(session_code_id=session_id).all()
+            
+            for employee in all_employees:
+                if employee.regid not in present_reg_ids and employee.regid not in [a.reg_id for a in attendance_records]:
+                    absent_employees.append({
+                        'reg_id': employee.regid,
+                        'first_name': employee.first_name,
+                        'last_name': employee.last_name,
+                        'occupation': employee.occupation,
+                        'start_time': '-',
+                        'end_time': '-',
+                        'total_hours': 0,
+                        'status': 'Absent',
+                        'sessions': 0
+                    })
+        
+        # Combine all data
+        all_data = attendance_data + absent_employees
+        
+        # Create CSV content
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            'Employee Name', 'ID', 'Occupation', 'Status',
+            'First In', 'Last Out', 'Total Hours', 'Sessions'
+        ])
+        
+        for record in all_data:
+            writer.writerow([
+                f"{record['last_name']}, {record['first_name']}",
+                record['reg_id'],
+                record['occupation'],
+                record['status'],
+                record['start_time'],
+                record['end_time'],
+                f"{record['total_hours']}h",
+                f"{record['sessions']} session{'s' if record['sessions'] != 1 else ''}"
+            ])
+        
+        # Generate filename with date
+        filename = f"daily_attendance_{selected_date}.csv"
+        
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        logging.exception("Error generating daily attendance CSV: %s", str(e))
+        flash("An error occurred while generating the CSV file.")
+        return redirect(url_for('admin_bp.data', tab='attendance'))
