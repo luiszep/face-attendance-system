@@ -1,38 +1,114 @@
-downloads/
-/images
-/sql/student_data.sql
-camera_no.py
-double.py
-main.py
-multiple_database.py
-multiple.py
-signup.html
-double.html
-
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
 *.pyo
 *.pyd
 *.pdb
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environment folders
+# Virtual Environments
 venv/
 .venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
 
-# Editor settings
-.vscode/
+# Flask
+instance/
+.webassets-cache
+*.db
+*.sqlite
 
-# Logs
-*.log
-
-# OS-specific files
-.DS_Store
-Thumbs.db
-
-# Environment variables
+# Environment & Config Files
 .env
 *.env
+.env.*
+session_config.json
 
-# Claude Code session files
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs & Testing
+*.log
+logs/
+*.coverage
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.pytest_cache/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Project Specific
+/images
+/sql/student_data.sql
+uploads/
+temp/
+*.jpg
+*.jpeg
+*.png
+*.gif
+!frontend/static/images/*.jpg
+!frontend/static/images/*.png
+
+# Claude Code
 .claude/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Certificates & Keys (except the ones we need)
+*.pem
+*.key
+*.crt
+*.cer
+!keys/cacert.pem
+!keys/cert.pem
+!keys/key.pem
